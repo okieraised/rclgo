@@ -82,7 +82,7 @@ func splitCSVLike(s string) []string {
 	return out
 }
 
-func splitMsgDefaultArrayValues(ros2type, defaultsField string) []string {
+func SplitMsgDefaultArrayValues(ros2type, defaultsField string) []string {
 	s := strings.TrimSpace(normalizeMsgDefaultArrayValue(defaultsField))
 	if s == "" {
 		return nil

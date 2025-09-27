@@ -398,7 +398,7 @@ func parseMetadataFromPath(p string) (*Metadata, error) {
 	if len(dirs) >= 2 {
 		m.Package = dirs[len(dirs)-3]
 	} else {
-		return nil, fmt.Errorf("Path '%s' cannot be parsed for ROS2 package name!", p)
+		return nil, fmt.Errorf("path '%s' cannot be parsed for ROS2 package name", p)
 	}
 
 	return m, nil

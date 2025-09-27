@@ -49,7 +49,7 @@ func TestSplitMsgDefaultArrayValues(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got := splitMsgDefaultArrayValues(tc.ros2type, tc.input)
+			got := SplitMsgDefaultArrayValues(tc.ros2type, tc.input)
 
 			// compare nil vs empty explicitly
 			if tc.wantSlice == nil && got != nil {

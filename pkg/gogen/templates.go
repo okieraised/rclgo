@@ -8,19 +8,19 @@ import (
 )
 
 var templateFuncMap template.FuncMap = template.FuncMap{
-	"lc":           strings.ToLower,
-	"camelToSnake": utilities.CamelToSnake,
-	//"defaultCode":                 defaultCode,
+	"lc":                          strings.ToLower,
+	"camelToSnake":                utilities.CamelToSnake,
+	"defaultCode":                 defaultCode,
 	"ucFirst":                     utilities.UpperCaseFirst,
 	"srvNameFromSrvMsgName":       utilities.SrvNameFromSrvMsgName,
 	"actionNameFromActionMsgName": utilities.ActionNameFromActionMsgName,
 	"actionNameFromActionSrvName": utilities.ActionNameFromActionSrvName,
 	"cReturnCodeNameToGo":         utilities.CReturnCodeNameToGo,
-	//"cloneCode":                   cloneCode,
-	"actionHasSuffix": actionHasSuffix,
-	"matchMsg":        matchMsg,
-	"sanitizeValue":   utilities.DefaultValueSanitizer,
-	"goLicenseHeader": utilities.LicenseHeader,
+	"cloneCode":                   cloneCode,
+	"actionHasSuffix":             actionHasSuffix,
+	"matchMsg":                    matchMsg,
+	"sanitizeValue":               utilities.DefaultValueSanitizer,
+	"goLicenseHeader":             utilities.LicenseHeader,
 }
 
 var ros2PackageCommonTemplate = template.Must(
