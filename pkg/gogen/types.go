@@ -18,7 +18,7 @@ func (m *Metadata) GoPackage() string {
 	return m.Package + "_" + m.Type
 }
 
-// ROS2Message is a message definition. https://design.ros2.org/articles/legacy_interface_definition.html
+// ROS2Message is a message definition.
 // Use ROS2MessageNew() to initialize the struct
 type ROS2Message struct {
 	*Metadata
@@ -179,10 +179,9 @@ var primitiveTypeMappings = map[string]rosIDLRuntimeCTypeMapping{
 
 // blacklistedMessages is matched against the paths gogen inspects
 // if it is a ROS2 Message file and needs to be turned into a Go type.
-// If the path matches the blacklist, it is ignored and a notification is logged.
+// If the path matches the blocklist, it is ignored and a notification is logged.
 var blacklistedMessages = []string{
 	"libstatistics_collector/msg/DummyMessage",
-	"this-is-a-test-blacklist-entry-do-not-remove-used-for-internal-testing",
 }
 
 // cErrorTypeFiles are looked for #definitions and parsed as Golang ros2 error types

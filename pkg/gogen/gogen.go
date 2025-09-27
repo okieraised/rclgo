@@ -46,12 +46,10 @@ type Config struct {
 	RootPaths           []string
 	DestPath            string
 	CGOFlagsPath        string
-
-	RegexIncludes  RuleSet
-	ROSPkgIncludes []string
-	GoPkgIncludes  []string
-
-	LicenseHeader string
+	RegexIncludes       RuleSet
+	ROSPkgIncludes      []string
+	GoPkgIncludes       []string
+	//LicenseHeader       string
 }
 
 var DefaultConfig = Config{
@@ -72,8 +70,8 @@ func RclgoRepoRootPath() string {
 type Generator struct {
 	config               *Config
 	cImportsByPkgAndType map[string]utilities.StringSet
-	allPkgs              map[string]*rosPkgRef
-	actionMsgsNeeded     bool
+	allPackages          map[string]*rosPkgRef
+	actionMsgNeeded      bool
 }
 
 func New(config *Config) *Generator {
@@ -101,29 +99,20 @@ func (g *Generator) GenerateRclgoFlags() error {
 	)
 }
 
-func (g *Generator) GenerateTestGogenFlags() error {
-	return g.generateRclgoFile(
-		"gogen flags",
-		filepath.Join(g.config.DestPath, "test/gogen/flags.gen.go"),
-		gogenTestFlags,
-		nil,
-	)
-}
-
 func (g *Generator) generateRclgoFile(fileType, destFilePath string, tmpl *template.Template, data templateData) error {
 	_, _ = fmt.Fprintf(os.Stderr, "Generating %s: %s\n", fileType, destFilePath)
 	return g.generateGoFile(destFilePath, tmpl, data)
 }
 
 func (g *Generator) GenerateROS2AllMessagesImporter() error {
-	pkgs := map[string]struct{}{}
+	packages := map[string]struct{}{}
 	for _, glob := range []string{"*/msg", "*/srv", "*/action"} {
 		dirs, err := filepath.Glob(filepath.Join(g.config.DestPath, glob))
 		if err != nil {
 			return err
 		}
 		for _, d := range dirs {
-			pkgs[path.Join(
+			packages[path.Join(
 				filepath.Base(filepath.Dir(d)),
 				filepath.Base(d),
 			)] = struct{}{}
@@ -132,7 +121,7 @@ func (g *Generator) GenerateROS2AllMessagesImporter() error {
 	return g.generateGoFile(
 		filepath.Join(g.config.DestPath, "msgs.gen.go"),
 		ros2MsgImportAllPackage,
-		templateData{"Packages": pkgs},
+		templateData{"Packages": packages},
 	)
 }
 
@@ -218,7 +207,7 @@ type rosPkgRef struct {
 func (g *Generator) GenerateGolangMessageTypes() error {
 	g.findPackages()
 	if len(g.config.RegexIncludes) == 0 && len(g.config.ROSPkgIncludes) == 0 && len(g.config.GoPkgIncludes) == 0 {
-		for pkg := range g.allPkgs {
+		for pkg := range g.allPackages {
 			g.generatePkg(pkg, false)
 		}
 	} else {
@@ -236,10 +225,10 @@ func (g *Generator) GenerateGolangMessageTypes() error {
 				g.generatePkg(path.Dir(pkgWithType), true)
 			}
 		}
-		if g.actionMsgsNeeded {
+		if g.actionMsgNeeded {
 			g.generatePkg("action_msgs", true)
 		}
-		for pkg := range g.allPkgs {
+		for pkg := range g.allPackages {
 			if g.config.RegexIncludes.Includes(pkg) {
 				g.generatePkg(pkg, false)
 			}
@@ -255,7 +244,7 @@ func (g *Generator) GenerateGolangMessageTypes() error {
 }
 
 func (g *Generator) generatePkg(pkg string, genDeps bool) {
-	ref := g.allPkgs[pkg]
+	ref := g.allPackages[pkg]
 	if ref == nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Failed to generate package %s: package not found\n", pkg)
 	} else if !ref.Generated {
@@ -313,7 +302,7 @@ func (g *Generator) generateInterface(meta Metadata, ifacePath string) {
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error converting ROS2 Action '%s' to '%s', error: %v\n", ifacePath, g.config.DestPath, err)
 		}
-		g.actionMsgsNeeded = true
+		g.actionMsgNeeded = true
 		set := g.getCImportsForPkgAndType(result.GoPackage())
 		if result != nil {
 			set.AddFrom(result.Goal.CImports)
@@ -333,9 +322,9 @@ func (g *Generator) generateInterface(meta Metadata, ifacePath string) {
 var interfaceFileRE = regexp.MustCompile(`/(?:msg/.+\.msg|srv/.+\.srv|action/.+\.action)$`)
 
 func (g *Generator) findPackages() {
-	g.allPkgs = map[string]*rosPkgRef{}
+	g.allPackages = map[string]*rosPkgRef{}
 	for i := len(g.config.RootPaths) - 1; i >= 0; i-- {
-		filepath.Walk(g.config.RootPaths[i], func(path string, info fs.FileInfo, err error) error { //nolint:errcheck
+		_ = filepath.Walk(g.config.RootPaths[i], func(path string, info fs.FileInfo, err error) error { //nolint:errcheck
 			if err != nil {
 				return nil
 			}
@@ -351,10 +340,10 @@ func (g *Generator) findPackages() {
 					_, _ = fmt.Fprintf(os.Stderr, "Failed to parse metadata from path %s: %v\n", path, err)
 					return nil
 				}
-				ref := g.allPkgs[meta.Package]
+				ref := g.allPackages[meta.Package]
 				if ref == nil {
 					ref = &rosPkgRef{Interfaces: map[Metadata]string{}}
-					g.allPkgs[meta.Package] = ref
+					g.allPackages[meta.Package] = ref
 				}
 				ref.Interfaces[*meta] = path
 			}
@@ -374,12 +363,12 @@ func (g *Generator) generateMessage(md *Metadata, sourcePath string) (*ROS2Messa
 		return nil, err
 	}
 
-	parser := parser{config: g.config}
-	err = parser.ParseROS2Message(msg, string(content))
+	prs := parser{config: g.config}
+	err = prs.ParseROS2Message(msg, string(content))
 	if err != nil {
 		return nil, err
 	}
-	err = g.generateMessageGoFile(&parser, msg)
+	err = g.generateMessageGoFile(&prs, msg)
 	if err != nil {
 		return nil, err
 	}
@@ -404,7 +393,7 @@ func parseMetadataFromPath(p string) (*Metadata, error) {
 	return m, nil
 }
 
-func ifaceFilePath(destPathPkgRoot string, m *Metadata) string {
+func iFaceFilePath(destPathPkgRoot string, m *Metadata) string {
 	return filepath.Join(destPathPkgRoot, m.ImportPath(), m.Name+".gen.go")
 }
 
@@ -414,11 +403,11 @@ func (g *Generator) generateService(m *Metadata, srcPath string) (*ROS2Service, 
 	if err != nil {
 		return nil, err
 	}
-	parser := parser{config: g.config}
-	if err = parser.ParseService(service, string(srcFile)); err != nil {
+	prs := parser{config: g.config}
+	if err = prs.ParseService(service, string(srcFile)); err != nil {
 		return nil, err
 	}
-	err = g.generateServiceGoFiles(&parser, service)
+	err = g.generateServiceGoFiles(&prs, service)
 	if err != nil {
 		return nil, err
 	}
@@ -435,8 +424,8 @@ func (g *Generator) generateAction(srcPath string) (*ROS2Action, error) {
 	if err != nil {
 		return nil, err
 	}
-	parser := parser{config: g.config}
-	if err = parser.ParseAction(action, string(srcFile)); err != nil {
+	prs := parser{config: g.config}
+	if err = prs.ParseAction(action, string(srcFile)); err != nil {
 		return nil, err
 	}
 	err = g.generateIfaceGoFile(
@@ -447,27 +436,27 @@ func (g *Generator) generateAction(srcPath string) (*ROS2Action, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = g.generateMessageGoFile(&parser, action.Goal)
+	err = g.generateMessageGoFile(&prs, action.Goal)
 	if err != nil {
 		return nil, err
 	}
-	err = g.generateMessageGoFile(&parser, action.Result)
+	err = g.generateMessageGoFile(&prs, action.Result)
 	if err != nil {
 		return nil, err
 	}
-	err = g.generateMessageGoFile(&parser, action.Feedback)
+	err = g.generateMessageGoFile(&prs, action.Feedback)
 	if err != nil {
 		return nil, err
 	}
-	err = g.generateServiceGoFiles(&parser, action.SendGoal)
+	err = g.generateServiceGoFiles(&prs, action.SendGoal)
 	if err != nil {
 		return nil, err
 	}
-	err = g.generateServiceGoFiles(&parser, action.GetResult)
+	err = g.generateServiceGoFiles(&prs, action.GetResult)
 	if err != nil {
 		return nil, err
 	}
-	err = g.generateMessageGoFile(&parser, action.FeedbackMessage)
+	err = g.generateMessageGoFile(&prs, action.FeedbackMessage)
 	if err != nil {
 		return nil, err
 	}
@@ -496,7 +485,7 @@ func (g *Generator) generateGoFile(destPath string, tmpl *template.Template, dat
 }
 
 func (g *Generator) generateIfaceGoFile(meta *Metadata, tmpl *template.Template, data templateData) error {
-	return g.generateGoFile(ifaceFilePath(g.config.DestPath, meta), tmpl, data)
+	return g.generateGoFile(iFaceFilePath(g.config.DestPath, meta), tmpl, data)
 }
 
 func (g *Generator) generateMessageGoFile(parser *parser, msg *ROS2Message) error {
