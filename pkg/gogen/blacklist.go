@@ -43,9 +43,8 @@ func blacklisted(path string) (bool, string) {
 	if sub == nil {
 		return false, ""
 	}
-	names := blacklistRe.SubexpNames() // aligned with sub
+	names := blacklistRe.SubexpNames()
 
-	// Mirror original: return the LAST matching rule.
 	for i := len(sub) - 1; i >= 1; i-- {
 		if sub[i] == "" {
 			continue
