@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"reflect"
 	"runtime"
 	"sync"
 	"time"
@@ -99,9 +98,17 @@ func (a *Args) argc() C.int {
 	return C.int(len(a.unparsed))
 }
 
+//func (a *Args) argv() **C.char {
+//	s := (*reflect.SliceHeader)(unsafe.Pointer(&a.unparsed))
+//	return (**C.char)(unsafe.Pointer(s.Data))
+//}
+
+// a.unparsed is assumed to be []*C.char
 func (a *Args) argv() **C.char {
-	s := (*reflect.SliceHeader)(unsafe.Pointer(&a.unparsed))
-	return (**C.char)(unsafe.Pointer(s.Data))
+	if len(a.unparsed) == 0 {
+		return nil
+	}
+	return unsafe.SliceData(a.unparsed)
 }
 
 func (a *Args) String() string {
@@ -981,7 +988,7 @@ type Client struct {
 
 // NewClient creates a new client.
 //
-// Options must not be modified after passing it to this function. If options is
+// Options must not be modified after passing it to this function. If options are
 // nil, default options are used.
 func (n *Node) NewClient(
 	serviceName string,

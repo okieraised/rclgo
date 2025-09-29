@@ -55,6 +55,7 @@ func DefaultLoggingOutputHandler(
 	)
 }
 
+//export loggingOutputHandler
 func loggingOutputHandler(
 	location *C.rcutils_log_location_t,
 	severity C.int,
