@@ -3,7 +3,7 @@ package typemap
 import (
 	"fmt"
 
-	"github.com/okieraised/rclgo/pkg/rlcgo/types"
+	"github.com/okieraised/rclgo/pkg/rclgo/types"
 )
 
 // messageTypeMap maps the ROS2 Message type name to the type implementation in Go,
