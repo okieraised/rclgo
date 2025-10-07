@@ -15,6 +15,7 @@ package jazzy
 */
 import "C"
 import (
+	"strings"
 	"unicode/utf16"
 	"unsafe"
 )

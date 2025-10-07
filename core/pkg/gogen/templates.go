@@ -721,6 +721,7 @@ import "C"
 import (
 	"unicode/utf16"
 	"unsafe"
+	"strings"
 )
 
 func StringAsCStruct(dst unsafe.Pointer, m string) {
