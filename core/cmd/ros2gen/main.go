@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/okieraised/rclgo/cmd/ros2gen/cmd"
+	"github.com/okieraised/rclgo/core/cmd/ros2gen/cmd"
 )
 
 func main() {

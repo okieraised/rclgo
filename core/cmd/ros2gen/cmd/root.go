@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/okieraised/rclgo/core/internal/distro"
+	"github.com/okieraised/rclgo/core/pkg/gogen"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
