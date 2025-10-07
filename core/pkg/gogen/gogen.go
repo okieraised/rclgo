@@ -14,6 +14,7 @@ import (
 	"text/template"
 
 	"al.essio.dev/pkg/shellescape"
+	"github.com/okieraised/rclgo/core/internal/distro"
 	"github.com/okieraised/rclgo/core/internal/utilities"
 )
 
@@ -64,7 +65,11 @@ func RclgoRepoRootPath() string {
 	if !ok {
 		panic("could not determine rclgo repo root path")
 	}
-	return filepath.Join(file, "../../..")
+	outputPath := filepath.Join(file, fmt.Sprintf("../../../../%s", filepath.Base(os.Getenv(distro.AmentPrefixPath))))
+
+	fmt.Println(fmt.Sprintf("generating rclgo module for ROS2 [%s] in [%s]", filepath.Base(os.Getenv(distro.AmentPrefixPath)), outputPath))
+
+	return outputPath
 }
 
 type Generator struct {
@@ -85,7 +90,7 @@ func (g *Generator) GeneratePrimitives() error {
 	fmt.Println("Generating primitives...", g.config.DestPath)
 	return g.generateRclgoFile(
 		"primitive types",
-		filepath.Join(g.config.DestPath, "pkg/rclgo/primitives/primitives.gen.go"),
+		filepath.Join(g.config.DestPath, "primitives.gen.go"),
 		primitiveTypes,
 		templateData{"PMap": &primitiveTypeMappings},
 	)
@@ -94,9 +99,12 @@ func (g *Generator) GeneratePrimitives() error {
 func (g *Generator) GenerateRclgoFlags() error {
 	return g.generateRclgoFile(
 		"rclgo flags",
-		filepath.Join(g.config.DestPath, "pkg/rclgo/flags.gen.go"),
+		filepath.Join(g.config.DestPath, "flags.gen.go"),
 		rclgoFlags,
-		templateData{"ROSIncludes": rclgoROSIncludes},
+		templateData{
+			"ROSIncludes": rclgoROSIncludes,
+			"ROSDistro":   filepath.Base(os.Getenv(distro.AmentPrefixPath)),
+		},
 	)
 }
 

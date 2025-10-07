@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/okieraised/rclgo/core/internal/distro"
 	"github.com/okieraised/rclgo/core/internal/utilities"
 )
 
@@ -36,7 +37,7 @@ func prepareErrorTypesCFileRegexp() {
 }
 
 func (g *Generator) GenerateROS2ErrorTypes() error {
-	destFilePath := filepath.Join(g.config.DestPath, "pkg/rclgo/error_types.gen.go")
+	destFilePath := filepath.Join(g.config.DestPath, "error_types.gen.go")
 	var errorTypes []*ROS2ErrorType
 
 	for _, root := range g.config.RootPaths {
@@ -80,6 +81,7 @@ func (g *Generator) GenerateROS2ErrorTypes() error {
 			"errorTypes":  errorTypes,
 			"includes":    cErrorTypeFiles,
 			"dedupFilter": ros2errorTypesDeduplicationFilter,
+			"ROSDistro":   filepath.Base(os.Getenv(distro.AmentPrefixPath)),
 		},
 	)
 }

@@ -10,13 +10,13 @@ import (
 	"fmt"
 )
 
-type rclError struct {
+type RclError struct {
 	rclRetCode int
 	context    string
 	trace      string
 }
 
-func (e *rclError) Error() string {
+func (e *RclError) Error() string {
 	return e.context
 }
 
