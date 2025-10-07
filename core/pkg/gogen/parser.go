@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/okieraised/rclgo/internal/utilities"
+	"github.com/okieraised/rclgo/core/internal/utilities"
 )
 
 var goKeywords = map[string]struct{}{
