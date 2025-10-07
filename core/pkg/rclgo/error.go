@@ -5,18 +5,15 @@ package rclgo
 #include <rcutils/error_handling.h>
 */
 import "C"
+import "fmt"
 
-import (
-	"fmt"
-)
-
-type RclError struct {
+type rclError struct {
 	rclRetCode int
 	context    string
 	trace      string
 }
 
-func (e *RclError) Error() string {
+func (e *rclError) Error() string {
 	return e.context
 }
 

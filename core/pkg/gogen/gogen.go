@@ -42,6 +42,7 @@ func (s RuleSet) Includes(str string) bool {
 }
 
 type Config struct {
+	DistroImportPath    string
 	RclgoImportPath     string
 	MessageModulePrefix string
 	RootPaths           []string
@@ -54,6 +55,7 @@ type Config struct {
 }
 
 var DefaultConfig = Config{
+	DistroImportPath:    fmt.Sprintf("github.com/okieraised/rclgo/%s", filepath.Base(os.Getenv(distro.AmentPrefixPath))),
 	RclgoImportPath:     "github.com/okieraised/rclgo",
 	MessageModulePrefix: "github.com/okieraised/rclgo-msgs",
 }
@@ -87,12 +89,14 @@ func New(config *Config) *Generator {
 }
 
 func (g *Generator) GeneratePrimitives() error {
-	fmt.Println("Generating primitives...", g.config.DestPath)
 	return g.generateRclgoFile(
 		"primitive types",
 		filepath.Join(g.config.DestPath, "primitives.gen.go"),
 		primitiveTypes,
-		templateData{"PMap": &primitiveTypeMappings},
+		templateData{
+			"PMap":      &primitiveTypeMappings,
+			"ROSDistro": filepath.Base(os.Getenv(distro.AmentPrefixPath)),
+		},
 	)
 }
 

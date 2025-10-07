@@ -17,7 +17,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/okieraised/rclgo/pkg/rclgo/types"
+	"github.com/okieraised/rclgo/core/pkg/rclgo/types"
 )
 
 func NewDefaultStatusQosProfile() QosProfile {
