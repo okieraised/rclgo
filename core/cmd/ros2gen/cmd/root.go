@@ -120,8 +120,6 @@ func init() {
 func configureFlags(cmd *cobra.Command, destPathDefault string) {
 	cmd.PersistentFlags().StringArrayP("root-path", "r", []string{os.Getenv("AMENT_PREFIX_PATH")}, "Root lookup path for ROS2 .msg files. If ROS2 environment is sourced, is auto-detected.")
 	cmd.PersistentFlags().StringP("dest-path", "d", destPathDefault, "Output directory for the Golang ROS2 messages.")
-	cmd.PersistentFlags().String("rclgo-import-path", gogen.DefaultConfig.RclgoImportPath, "Import path of rclgo library")
-	cmd.PersistentFlags().String("message-module-prefix", gogen.DefaultConfig.MessageModulePrefix, "Import path prefix for generated message binding modules")
 	cmd.PersistentFlags().StringArray("include-package", nil, "Include only packages matching a regex. Can be passed multiple times. If multiple include options are passed, the union of the matches is generated.")
 	cmd.PersistentFlags().StringArray("include-package-deps", nil, "Include only packages which are dependencies of listed packages. Can be passed multiple times. If multiple include options are passed, the union of the matches is generated.")
 	cmd.PersistentFlags().StringArray("include-go-package-deps", nil, "Include only packages which are dependencies of listed Go packages. Can be passed multiple times. If multiple include options are passed, the union of the matches is generated.")
@@ -164,20 +162,19 @@ func bindPFlags(cmd *cobra.Command) {
 
 func getConfig(cmd *cobra.Command) (*gogen.Config, error) {
 	destPath := getString(cmd, "dest-path")
-	modulePrefix := getString(cmd, "message-module-prefix")
-
-	if modulePrefix == gogen.DefaultConfig.MessageModulePrefix {
-		pkgs, err := packages.Load(&packages.Config{})
-		if err == nil && len(pkgs) > 0 {
-			modulePrefix = path.Join(pkgs[0].PkgPath, destPath)
-		}
+	modulePrefix := gogen.DefaultConfig.MessageModulePrefix
+	pkgs, err := packages.Load(&packages.Config{})
+	if err == nil && len(pkgs) > 0 {
+		modulePrefix = path.Join(pkgs[0].PkgPath, destPath)
 	}
+
 	rules, err := getPackageRules(cmd)
 	if err != nil {
 		return nil, err
 	}
 	return &gogen.Config{
-		RclgoImportPath:     getString(cmd, "rclgo-import-path"),
+		RclgoImportPath:     gogen.DefaultConfig.RclgoImportPath,
+		DistroImportPath:    gogen.DefaultConfig.DistroImportPath,
 		MessageModulePrefix: modulePrefix,
 		RootPaths:           getRootPaths(cmd),
 		DestPath:            destPath,

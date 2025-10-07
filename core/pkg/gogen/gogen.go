@@ -51,12 +51,11 @@ type Config struct {
 	RegexIncludes       RuleSet
 	ROSPkgIncludes      []string
 	GoPkgIncludes       []string
-	//LicenseHeader       string
 }
 
 var DefaultConfig = Config{
 	DistroImportPath:    fmt.Sprintf("github.com/okieraised/rclgo/%s", filepath.Base(os.Getenv(distro.AmentPrefixPath))),
-	RclgoImportPath:     "github.com/okieraised/rclgo",
+	RclgoImportPath:     "github.com/okieraised/rclgo/core",
 	MessageModulePrefix: "github.com/okieraised/rclgo-msgs",
 }
 
