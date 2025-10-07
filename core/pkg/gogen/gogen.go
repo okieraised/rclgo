@@ -82,6 +82,7 @@ func New(config *Config) *Generator {
 }
 
 func (g *Generator) GeneratePrimitives() error {
+	fmt.Println("Generating primitives...", g.config.DestPath)
 	return g.generateRclgoFile(
 		"primitive types",
 		filepath.Join(g.config.DestPath, "pkg/rclgo/primitives/primitives.gen.go"),

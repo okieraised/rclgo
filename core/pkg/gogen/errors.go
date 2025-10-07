@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/okieraised/rclgo/internal/utilities"
+	"github.com/okieraised/rclgo/core/internal/utilities"
 )
 
 var (
