@@ -14,7 +14,7 @@ import (
 	"text/template"
 
 	"al.essio.dev/pkg/shellescape"
-	"github.com/okieraised/rclgo/internal/utilities"
+	"github.com/okieraised/rclgo/core/internal/utilities"
 )
 
 type Rule struct {

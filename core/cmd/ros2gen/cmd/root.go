@@ -8,8 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/okieraised/rclgo/internal/distro"
-	"github.com/okieraised/rclgo/pkg/gogen"
+	"github.com/okieraised/rclgo/core/internal/distro"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"

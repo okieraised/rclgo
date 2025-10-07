@@ -4,7 +4,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/okieraised/rclgo/internal/utilities"
+	"github.com/okieraised/rclgo/core/internal/utilities"
 )
 
 var templateFuncMap template.FuncMap = template.FuncMap{

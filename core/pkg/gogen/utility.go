@@ -4,7 +4,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/okieraised/rclgo/internal/utilities"
+	"github.com/okieraised/rclgo/core/internal/utilities"
 	"golang.org/x/tools/go/packages"
 )
 
