@@ -113,7 +113,7 @@ func errorsCastC(rclRetT C.rcl_ret_t, context string) error {
 		return &RmwInvalidArgument{rclError: rclError{rclRetCode: 11, trace: string(stackTraceBuffer), context: errorsBuildContext(&RmwInvalidArgument{}, context, string(stackTraceBuffer))}}
 	case C.RMW_RET_INCORRECT_RMW_IMPLEMENTATION:
 		return &RmwIncorrectRmwImplementation{rclError: rclError{rclRetCode: 12, trace: string(stackTraceBuffer), context: errorsBuildContext(&RmwIncorrectRmwImplementation{}, context, string(stackTraceBuffer))}}
-	
+
 	default:
 		return &UnknownReturnCode{rclError: rclError{rclRetCode: int(rclRetT), context: context}}
 	}
@@ -122,7 +122,6 @@ func errorsCastC(rclRetT C.rcl_ret_t, context string) error {
 type UnknownReturnCode struct {
 	rclError
 }
-
 
 // AlreadyInit rcl specific ret codes start at 100rcl_init() already called return code.
 type AlreadyInit struct {
@@ -369,8 +368,6 @@ type RmwNodeNameNonExistent struct {
 	rclError
 }
 
-
-
 // Ok Success return code.
 type Ok = RmwOk
 
@@ -388,5 +385,3 @@ type InvalidArgument = RmwInvalidArgument
 
 // Unsupported Unsupported return code.
 type Unsupported = RmwUnsupported
-
-
