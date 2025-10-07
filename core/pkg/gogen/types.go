@@ -3,7 +3,7 @@ package gogen
 import (
 	"path/filepath"
 
-	"github.com/okieraised/rclgo/internal/utilities"
+	"github.com/okieraised/rclgo/core/internal/utilities"
 )
 
 type Metadata struct {
