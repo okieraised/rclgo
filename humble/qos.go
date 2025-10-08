@@ -1,4 +1,4 @@
-package rclgo
+package humble
 
 // #include "rmw/rmw.h" //nolint:all
 import "C"

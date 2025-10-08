@@ -1,4 +1,4 @@
-package rclgo
+package humble
 
 /*
 #include <stdlib.h>
@@ -16,8 +16,6 @@ import (
 	"sync"
 	"time"
 	"unsafe"
-
-	"github.com/okieraised/rclgo/core/pkg/rclgo/types"
 )
 
 func NewDefaultStatusQosProfile() QosProfile {
@@ -34,15 +32,15 @@ func NewDefaultStatusQosProfile() QosProfile {
 }
 
 type goalIDMessage interface {
-	types.Message
-	GetGoalID() *types.GoalID
-	SetGoalID(id *types.GoalID)
+	Message
+	GetGoalID() *GoalID
+	SetGoalID(id *GoalID)
 }
 
 type goalRequestMessage interface {
 	goalIDMessage
-	GetGoalDescription() types.Message
-	SetGoalDescription(goal types.Message)
+	GetGoalDescription() Message
+	SetGoalDescription(goal Message)
 }
 
 type goalResponseMessage interface {
@@ -74,8 +72,8 @@ type FeedbackSender struct {
 
 // Send sends msg to clients listening for feedback messages.
 //
-// The type support of msg must be types.ActionTypeSupport.Feedback().
-func (s *FeedbackSender) Send(msg types.Message) error {
+// The type support of msg must be ActionTypeSupport.Feedback().
+func (s *FeedbackSender) Send(msg Message) error {
 	return s.goal.server.sendFeedback(s.goal, msg)
 }
 
@@ -83,19 +81,16 @@ func (s *FeedbackSender) Send(msg types.Message) error {
 // ActionServer.
 type GoalHandle struct {
 	// The ID of the goal. Modifying this is an undefined behavior.
-	ID types.GoalID
-	// Description is a message whose type support is
-	// types.ActionTypeSupport.Goal().
-	Description types.Message
-
+	ID GoalID
+	// Description is a message whose type support is ActionTypeSupport.Goal().
+	Description   Message
 	server        *ActionServer
 	cancelContext context.CancelFunc
 	requestID     C.rmw_request_id_t
 	handle        *C.rcl_action_goal_handle_t
 	info          C.rcl_action_goal_info_t
-
-	result     types.Message
-	resultCond *sync.Cond
+	result        Message
+	resultCond    *sync.Cond
 }
 
 func newEmptyGoal(s *ActionServer, cancel context.CancelFunc) *GoalHandle {
@@ -151,7 +146,7 @@ func (g *GoalHandle) Accept() (s *FeedbackSender, err error) {
 	g.resultCond.L.Lock()
 	defer g.resultCond.L.Unlock()
 	if g.status() == GoalUnknown {
-		g.info.goal_id.uuid = *(*[types.GoalIDLen]C.uchar)(unsafe.Pointer(&g.ID))
+		g.info.goal_id.uuid = *(*[GoalIDLen]C.uchar)(unsafe.Pointer(&g.ID))
 		if err := g.server.acceptGoal(g); err != nil {
 			return nil, err
 		}
@@ -174,7 +169,7 @@ func (g *GoalHandle) abort() {
 	g.resultCond.Broadcast()
 }
 
-func (g *GoalHandle) setResult(msg types.Message) {
+func (g *GoalHandle) setResult(msg Message) {
 	g.resultCond.L.Lock()
 	defer g.resultCond.L.Unlock()
 	g.setState(C.GOAL_EVENT_SUCCEED)
@@ -199,7 +194,7 @@ func (g *GoalHandle) finishCancel() {
 	g.resultCond.Broadcast()
 }
 
-func (g *GoalHandle) waitResult() (GoalStatus, types.Message) {
+func (g *GoalHandle) waitResult() (GoalStatus, Message) {
 	g.resultCond.L.Lock()
 	for {
 		status := g.status()
@@ -213,7 +208,7 @@ func (g *GoalHandle) waitResult() (GoalStatus, types.Message) {
 	}
 }
 
-type ExecuteGoalFunc = func(context.Context, *GoalHandle) (types.Message, error)
+type ExecuteGoalFunc = func(context.Context, *GoalHandle) (Message, error)
 
 // Action can execute goals.
 type Action interface {
@@ -240,17 +235,17 @@ type Action interface {
 	//
 	// ExecuteGoal may be called multiple times in parallel by the ActionServer.
 	// Each call will receive a different GoalHandle.
-	ExecuteGoal(ctx context.Context, goal *GoalHandle) (types.Message, error)
+	ExecuteGoal(ctx context.Context, goal *GoalHandle) (Message, error)
 
 	// TypeSupport returns the type support for the action. The same value
 	// must be returned on every invocation.
-	TypeSupport() types.ActionTypeSupport
+	TypeSupport() ActionTypeSupport
 }
 
 // NewAction returns an Action implementation that uses typeSupport and executes
 // goals using executeGoal.
 func NewAction(
-	typeSupport types.ActionTypeSupport,
+	typeSupport ActionTypeSupport,
 	executeGoal ExecuteGoalFunc,
 ) Action {
 	return &action{
@@ -260,17 +255,17 @@ func NewAction(
 }
 
 type action struct {
-	typeSupport types.ActionTypeSupport
+	typeSupport ActionTypeSupport
 	executeGoal ExecuteGoalFunc
 }
 
 func (a *action) ExecuteGoal(
 	ctx context.Context, goal *GoalHandle,
-) (types.Message, error) {
+) (Message, error) {
 	return a.executeGoal(ctx, goal)
 }
 
-func (a *action) TypeSupport() types.ActionTypeSupport {
+func (a *action) TypeSupport() ActionTypeSupport {
 	return a.typeSupport
 }
 
@@ -301,7 +296,7 @@ type ActionServer struct {
 	waitable      singleUse
 	node          *Node
 	action        Action
-	typeSupport   types.ActionTypeSupport
+	typeSupport   ActionTypeSupport
 	resultTimeout time.Duration
 	clock         *Clock
 
@@ -309,7 +304,7 @@ type ActionServer struct {
 	rclServerMu  sync.Mutex
 	timerCancels []func()
 
-	goals   map[types.GoalID]*GoalHandle
+	goals   map[GoalID]*GoalHandle
 	goalsMu sync.RWMutex
 }
 
@@ -334,7 +329,7 @@ func (n *Node) NewActionServer(
 
 		rclServer: C.rcl_action_get_zero_initialized_server(),
 
-		goals: make(map[types.GoalID]*GoalHandle),
+		goals: make(map[GoalID]*GoalHandle),
 	}
 	if s.clock == nil {
 		s.clock = n.context.Clock()
@@ -472,7 +467,7 @@ func (s *ActionServer) handleGoalRequest(ctx context.Context) {
 			}
 			return
 		}
-		var result types.Message
+		var result Message
 		func() {
 			defer func() {
 				if r := recover(); r != nil {
@@ -539,7 +534,7 @@ func (s *ActionServer) expireGoals() error {
 			return nil
 		}
 		for _, goal := range expiredGoals[:int(numExpired)] {
-			delete(s.goals, *(*types.GoalID)(unsafe.Pointer(&goal.goal_id.uuid)))
+			delete(s.goals, *(*GoalID)(unsafe.Pointer(&goal.goal_id.uuid)))
 		}
 	}
 }
@@ -557,7 +552,7 @@ func (s *ActionServer) takeResultRequest(header *C.rmw_request_id_t) (goalIDMess
 	return req, nil
 }
 
-func (s *ActionServer) getGoal(id *types.GoalID, takeLock bool) *GoalHandle {
+func (s *ActionServer) getGoal(id *GoalID, takeLock bool) *GoalHandle {
 	if takeLock {
 		s.goalsMu.RLock()
 		defer s.goalsMu.RUnlock()
@@ -565,7 +560,7 @@ func (s *ActionServer) getGoal(id *types.GoalID, takeLock bool) *GoalHandle {
 	return s.goals[*id]
 }
 
-func (s *ActionServer) sendResultResponse(status GoalStatus, result types.Message, header *C.rmw_request_id_t) error {
+func (s *ActionServer) sendResultResponse(status GoalStatus, result Message, header *C.rmw_request_id_t) error {
 	ts := s.typeSupport.GetResult().Response()
 	resp := s.typeSupport.NewGetResultResponse(int8(status), result)
 	buf := ts.PrepareMemory()
@@ -647,7 +642,7 @@ func (s *ActionServer) handleCancelRequest() {
 			s.goalsMu.RLock()
 			defer s.goalsMu.RUnlock()
 			resp.(forEach).CallForEach(func(toCancel interface{}) {
-				goal := s.getGoal(toCancel.(*types.GoalID), false)
+				goal := s.getGoal(toCancel.(*GoalID), false)
 				if goal != nil {
 					goal.startCancel()
 				}
@@ -664,7 +659,7 @@ func (s *ActionServer) handleCancelRequest() {
 	}()
 }
 
-func (s *ActionServer) sendFeedback(goal *GoalHandle, fb types.Message) error {
+func (s *ActionServer) sendFeedback(goal *GoalHandle, fb Message) error {
 	msg := s.typeSupport.NewFeedbackMessage(&goal.ID, fb)
 	ts := s.typeSupport.FeedbackMessage()
 	buf := ts.PrepareMemory()
@@ -734,9 +729,9 @@ func (s *ActionServer) logGoalError(goal *GoalHandle, a ...interface{}) {
 	s.node.Logger().Error(b.String())
 }
 
-type FeedbackHandler func(context.Context, types.Message)
+type FeedbackHandler func(context.Context, Message)
 
-type StatusHandler func(context.Context, types.Message)
+type StatusHandler func(context.Context, Message)
 
 type ActionClientOptions struct {
 	GoalServiceQos   QosProfile
@@ -756,7 +751,7 @@ func NewDefaultActionClientOptions() *ActionClientOptions {
 	}
 }
 
-type actionClientHandler = func(context.Context, types.Message)
+type actionClientHandler = func(context.Context, Message)
 
 type actionClientHandlerMapEntry struct {
 	ctx     context.Context //nolint:containedctx // Used to keep track of Contexts
@@ -765,7 +760,7 @@ type actionClientHandlerMapEntry struct {
 
 type actionClientHandlerMap map[uint64]actionClientHandlerMapEntry
 
-func (m actionClientHandlerMap) call(msg types.Message) {
+func (m actionClientHandlerMap) call(msg Message) {
 	for _, entry := range m {
 		entry := entry
 		go func() { entry.handler(entry.ctx, msg.CloneMsg()) }()
@@ -773,13 +768,13 @@ func (m actionClientHandlerMap) call(msg types.Message) {
 }
 
 type actionClientSubs struct {
-	perGoal  map[types.GoalID]actionClientHandlerMap
+	perGoal  map[GoalID]actionClientHandlerMap
 	allGoals actionClientHandlerMap
 }
 
 func newActionClientHandlers() actionClientSubs {
 	return actionClientSubs{
-		perGoal:  make(map[types.GoalID]actionClientHandlerMap),
+		perGoal:  make(map[GoalID]actionClientHandlerMap),
 		allGoals: make(actionClientHandlerMap),
 	}
 }
@@ -793,7 +788,7 @@ type ActionClient struct {
 	waitable singleUse
 	node     *Node
 
-	typeSupport types.ActionTypeSupport
+	typeSupport ActionTypeSupport
 	rclClient   C.rcl_action_client_t
 	rclClientMu sync.Mutex
 
@@ -810,7 +805,7 @@ type ActionClient struct {
 // server.
 func (n *Node) NewActionClient(
 	name string,
-	ts types.ActionTypeSupport,
+	ts ActionTypeSupport,
 	opts *ActionClientOptions,
 ) (*ActionClient, error) {
 	if opts == nil {
@@ -903,13 +898,13 @@ func (c *ActionClient) Node() *Node {
 //
 // onFeedback may be nil, in which case feedback for the goal is not watched.
 //
-// The type support of goal must be types.ActionTypeSupport.Goal().
+// The type support of goal must be ActionTypeSupport.Goal().
 //
-// The type support of the returned message is types.ActionTypeSupport.Result().
+// The type support of the returned message is ActionTypeSupport.Result().
 //
 // The type support of the message passed to onFeedback is
-// types.ActionTypeSupport.FeedbackMessage().
-func (c *ActionClient) WatchGoal(ctx context.Context, goal types.Message, onFeedback FeedbackHandler) (result types.Message, goalID *types.GoalID, retErr error) {
+// ActionTypeSupport.FeedbackMessage().
+func (c *ActionClient) WatchGoal(ctx context.Context, goal Message, onFeedback FeedbackHandler) (result Message, goalID *GoalID, retErr error) {
 	req, err := c.newSendGoalRequest(goal)
 	if err != nil {
 		return nil, nil, err
@@ -952,11 +947,11 @@ func (c *ActionClient) WatchGoal(ctx context.Context, goal types.Message, onFeed
 // failed. SendGoal returns normally even if the goal is rejected, and the
 // status can be read from the returned response message.
 //
-// The type support of goal must be types.ActionTypeSupport.Goal().
+// The type support of goal must be ActionTypeSupport.Goal().
 //
 // The type support of the returned message is
-// types.ActionTypeSupport.SendGoal().Response().
-func (c *ActionClient) SendGoal(ctx context.Context, goal types.Message) (types.Message, *types.GoalID, error) {
+// ActionTypeSupport.SendGoal().Response().
+func (c *ActionClient) SendGoal(ctx context.Context, goal Message) (Message, *GoalID, error) {
 	msg, err := c.newSendGoalRequest(goal)
 	if err != nil {
 		return nil, nil, err
@@ -965,7 +960,7 @@ func (c *ActionClient) SendGoal(ctx context.Context, goal types.Message) (types.
 	return resp, msg.GetGoalID(), err
 }
 
-func (c *ActionClient) newSendGoalRequest(goal types.Message) (goalRequestMessage, error) {
+func (c *ActionClient) newSendGoalRequest(goal Message) (goalRequestMessage, error) {
 	msg := c.typeSupport.SendGoal().Request().New().(goalRequestMessage)
 	goalID := msg.GetGoalID()
 	if _, err := rand.Read(goalID[:]); err != nil {
@@ -978,15 +973,15 @@ func (c *ActionClient) newSendGoalRequest(goal types.Message) (goalRequestMessag
 // SendGoalRequest sends a goal to the server and returns the status message of
 // the goal.
 //
-// The type support of request must be types.ActionTypeSupport.SendGoal().Request().
+// The type support of request must be ActionTypeSupport.SendGoal().Request().
 //
 // The type support of the returned message is
-// types.ActionTypeSupport.SendGoal().Response().
+// ActionTypeSupport.SendGoal().Response().
 //
 // A non-nil error is returned only if the processing of the request itself
 // failed. SendGoalRequest returns normally even if the goal is rejected, and
 // the status can be read from the returned response message.
-func (c *ActionClient) SendGoalRequest(ctx context.Context, request types.Message) (types.Message, error) {
+func (c *ActionClient) SendGoalRequest(ctx context.Context, request Message) (Message, error) {
 	resp, _, err := c.goalSender.Send(ctx, request)
 	return resp, err
 }
@@ -1017,8 +1012,8 @@ func (c *ActionClient) takeGoalResponse(resp unsafe.Pointer) (C.int64_t, interfa
 // waits for that to happen before returning.
 //
 // The type support of the returned message is
-// types.ActionTypeSupport.GetResult().Response().
-func (c *ActionClient) GetResult(ctx context.Context, goalID *types.GoalID) (types.Message, error) {
+// ActionTypeSupport.GetResult().Response().
+func (c *ActionClient) GetResult(ctx context.Context, goalID *GoalID) (Message, error) {
 	msg := c.typeSupport.GetResult().Request().New()
 	msg.(goalIDMessage).SetGoalID(goalID)
 	resp, _, err := c.resultSender.Send(ctx, msg)
@@ -1063,7 +1058,7 @@ func (c *ActionClient) takeResultResponse(resp unsafe.Pointer) (C.int64_t, inter
 // The type of request is action_msgs/srv/CancelGoal_Request.
 //
 // The type of the returned message is action_msgs/srv/CancelGoal_Response.
-func (c *ActionClient) CancelGoal(ctx context.Context, request types.Message) (types.Message, error) {
+func (c *ActionClient) CancelGoal(ctx context.Context, request Message) (Message, error) {
 	resp, _, err := c.cancelSender.Send(ctx, request)
 	return resp, err
 }
@@ -1099,8 +1094,8 @@ func (c *ActionClient) takeCancelResponse(resp unsafe.Pointer) (C.int64_t, inter
 // Watching can be stopped by canceling ctx.
 //
 // The type support of the message passed to handler is
-// types.ActionTypeSupport.FeedbackMessage().
-func (c *ActionClient) WatchFeedback(ctx context.Context, goalID *types.GoalID, handler FeedbackHandler) <-chan error {
+// ActionTypeSupport.FeedbackMessage().
+func (c *ActionClient) WatchFeedback(ctx context.Context, goalID *GoalID, handler FeedbackHandler) <-chan error {
 	unsub := c.subscribe(ctx, &c.feedbackSubs, goalID, handler)
 	errc := make(chan error, 1)
 	go func() {
@@ -1114,7 +1109,7 @@ func (c *ActionClient) WatchFeedback(ctx context.Context, goalID *types.GoalID, 
 func (c *ActionClient) subscribe(
 	ctx context.Context,
 	subs *actionClientSubs,
-	id *types.GoalID,
+	id *GoalID,
 	handler actionClientHandler,
 ) (unsubscribe func()) {
 	c.rclClientMu.Lock()
@@ -1184,7 +1179,7 @@ func (c *ActionClient) handleFeedback() {
 // Watching can be stopped by canceling ctx.
 //
 // The type of the message passed to handler will be action_msgs/msg/GoalStatus.
-func (c *ActionClient) WatchStatus(ctx context.Context, goalID *types.GoalID, handler StatusHandler) <-chan error {
+func (c *ActionClient) WatchStatus(ctx context.Context, goalID *GoalID, handler StatusHandler) <-chan error {
 	unsub := c.subscribe(ctx, &c.statusSubs, goalID, handler)
 	errc := make(chan error, 1)
 	go func() {
@@ -1210,7 +1205,7 @@ func (c *ActionClient) handleStatus() {
 		})
 	case C.RCL_RET_ACTION_CLIENT_TAKE_FAILED:
 	default:
-		c.node.Logger().Error(errorsCastC(rc, "failed to take status"))
+		_ = c.node.Logger().Error(errorsCastC(rc, "failed to take status"))
 	}
 }
 

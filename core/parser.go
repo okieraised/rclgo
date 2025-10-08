@@ -1,12 +1,15 @@
-package gogen
+package core
 
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 
+	"github.com/okieraised/rclgo/core/internal/distro"
 	"github.com/okieraised/rclgo/core/internal/utilities"
 )
 
@@ -391,14 +394,12 @@ func (p *parser) cSerializationCode(f *ROS2Field, m *ROS2Message) string {
 
 	} else if f.TypeArray != "" && f.ArraySize > 0 && f.PkgName == "" {
 		// Primitive value Array
-		m.GoImports[p.config.DistroImportPath] = "primitives"
 		return `cSlice_` + f.RosName + ` := mem.` + f.CName + `[:]
-	` + `primitives.` + utilities.UpperCaseFirst(f.RosType) + `ArrayToC(*(*[]primitives.C` + utilities.UpperCaseFirst(f.RosType) + `)(unsafe.Pointer(&cSlice_` + f.RosName + `)), m.` + f.GoName + `[:])`
+	` + fmt.Sprintf("%s.", filepath.Base(os.Getenv(distro.AmentPrefixPath))) + utilities.UpperCaseFirst(f.RosType) + fmt.Sprintf(`ArrayToC(*(*[]%s.C`, filepath.Base(os.Getenv(distro.AmentPrefixPath))) + utilities.UpperCaseFirst(f.RosType) + `)(unsafe.Pointer(&cSlice_` + f.RosName + `)), m.` + f.GoName + `[:])`
 
 	} else if f.TypeArray != "" && f.ArraySize == 0 && f.PkgName == "" {
 		// Primitive value Slice
-		m.GoImports[p.config.DistroImportPath] = "primitives"
-		return `primitives.` + utilities.UpperCaseFirst(f.RosType) + `SequenceToC((*primitives.C` + utilities.UpperCaseFirst(f.RosType) + `Sequence)(unsafe.Pointer(&mem.` + f.CName + `)), m.` + f.GoName + `)`
+		return fmt.Sprintf("%s.", filepath.Base(os.Getenv(distro.AmentPrefixPath))) + utilities.UpperCaseFirst(f.RosType) + fmt.Sprintf(`SequenceToC((*%s.C`, filepath.Base(os.Getenv(distro.AmentPrefixPath))) + utilities.UpperCaseFirst(f.RosType) + `Sequence)(unsafe.Pointer(&mem.` + f.CName + `)), m.` + f.GoName + `)`
 
 	} else if f.TypeArray == "" && f.PkgName == "" {
 		// Primitive value single
@@ -406,11 +407,9 @@ func (p *parser) cSerializationCode(f *ROS2Field, m *ROS2Message) string {
 		// serialization implementations but still use a non-generated type in
 		// generated message fields.
 		if f.RosType == "string" {
-			m.GoImports[p.config.DistroImportPath] = "primitives"
-			return "primitives.StringAsCStruct(unsafe.Pointer(&mem." + f.CName + "), m." + f.GoName + ")"
+			return fmt.Sprintf("%s.StringAsCStruct(unsafe.Pointer(&mem.", filepath.Base(os.Getenv(distro.AmentPrefixPath))) + f.CName + "), m." + f.GoName + ")"
 		} else if f.RosType == "U16String" {
-			m.GoImports[p.config.DistroImportPath] = "primitives"
-			return "primitives.U16StringAsCStruct(unsafe.Pointer(&mem." + f.CName + "), m." + f.GoName + ")"
+			return fmt.Sprintf("%s.U16StringAsCStruct(unsafe.Pointer(&mem.", filepath.Base(os.Getenv(distro.AmentPrefixPath))) + f.CName + "), m." + f.GoName + ")"
 		}
 		return `mem.` + f.CName + ` = C.` + f.CType + `(m.` + f.GoName + `)`
 	}
@@ -442,14 +441,12 @@ func (p *parser) goSerializationCode(f *ROS2Field, m *ROS2Message) string {
 
 	} else if f.TypeArray != "" && f.ArraySize > 0 && f.PkgName == "" {
 		// Primitive value Array
-		m.GoImports[p.config.DistroImportPath] = "primitives"
 		return `cSlice_` + f.RosName + ` := mem.` + f.CName + `[:]
-	` + `primitives.` + utilities.UpperCaseFirst(f.RosType) + `ArrayToGo(m.` + f.GoName + `[:], *(*[]primitives.C` + utilities.UpperCaseFirst(f.RosType) + `)(unsafe.Pointer(&cSlice_` + f.RosName + `)))`
+	` + fmt.Sprintf(`%s.`, filepath.Base(os.Getenv(distro.AmentPrefixPath))) + utilities.UpperCaseFirst(f.RosType) + `ArrayToGo(m.` + f.GoName + fmt.Sprintf(`[:], *(*[]%s.C`, filepath.Base(os.Getenv(distro.AmentPrefixPath))) + utilities.UpperCaseFirst(f.RosType) + `)(unsafe.Pointer(&cSlice_` + f.RosName + `)))`
 
 	} else if f.TypeArray != "" && f.ArraySize == 0 && f.PkgName == "" {
 		// Primitive value Slice
-		m.GoImports[p.config.DistroImportPath] = "primitives"
-		return `primitives.` + utilities.UpperCaseFirst(f.RosType) + `SequenceToGo(&m.` + f.GoName + `, *(*primitives.C` + utilities.UpperCaseFirst(f.RosType) + `Sequence)(unsafe.Pointer(&mem.` + f.CName + `)))`
+		return fmt.Sprintf(`%s.`, filepath.Base(os.Getenv(distro.AmentPrefixPath))) + utilities.UpperCaseFirst(f.RosType) + `SequenceToGo(&m.` + f.GoName + fmt.Sprintf(`, *(*%s.C`, filepath.Base(os.Getenv(distro.AmentPrefixPath))) + utilities.UpperCaseFirst(f.RosType) + `Sequence)(unsafe.Pointer(&mem.` + f.CName + `)))`
 
 	} else if f.TypeArray == "" && f.PkgName == "" {
 		// Primitive value single
@@ -458,11 +455,9 @@ func (p *parser) goSerializationCode(f *ROS2Field, m *ROS2Message) string {
 		// serialization implementations but still use a non-generated type in
 		// generated message fields.
 		if f.RosType == "string" {
-			m.GoImports[p.config.DistroImportPath] = "primitives"
-			return "primitives.StringAsGoStruct(&m." + f.GoName + ", unsafe.Pointer(&mem." + f.CName + "))"
+			return fmt.Sprintf("%s.StringAsGoStruct(&m.", filepath.Base(os.Getenv(distro.AmentPrefixPath))) + f.GoName + ", unsafe.Pointer(&mem." + f.CName + "))"
 		} else if f.RosType == "U16String" {
-			m.GoImports[p.config.DistroImportPath] = "primitives"
-			return "primitives.U16StringAsGoStruct(&m." + f.GoName + ", unsafe.Pointer(&mem." + f.CName + "))"
+			return fmt.Sprintf("%s.U16StringAsGoStruct(&m.", filepath.Base(os.Getenv(distro.AmentPrefixPath))) + f.GoName + ", unsafe.Pointer(&mem." + f.CName + "))"
 		}
 		return `m.` + f.GoName + ` = ` + f.GoType + `(mem.` + f.CName + `)`
 

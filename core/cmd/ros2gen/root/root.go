@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/okieraised/rclgo/core"
 	"github.com/okieraised/rclgo/core/internal/distro"
-	"github.com/okieraised/rclgo/core/pkg/gogen"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -68,7 +68,7 @@ var generateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		gen := gogen.New(config)
+		gen := core.New(config)
 		if err := gen.GenerateGolangMessageTypes(); err != nil {
 			return fmt.Errorf("failed to generate interface bindings: %w", err)
 		}
@@ -91,7 +91,7 @@ var generateRclgoCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		gen := gogen.New(config)
+		gen := core.New(config)
 		err = gen.GeneratePrimitives()
 		if err != nil {
 			return fmt.Errorf("failed to generate primitive types: %w", err)
@@ -114,7 +114,7 @@ func init() {
 	configureFlags(generateCmd, "./ros2_msgs")
 
 	rootCmd.AddCommand(generateRclgoCmd)
-	configureFlags(generateRclgoCmd, gogen.RclgoRepoRootPath())
+	configureFlags(generateRclgoCmd, core.RclgoRepoRootPath())
 }
 
 func configureFlags(cmd *cobra.Command, destPathDefault string) {
@@ -160,9 +160,9 @@ func bindPFlags(cmd *cobra.Command) {
 	})
 }
 
-func getConfig(cmd *cobra.Command) (*gogen.Config, error) {
+func getConfig(cmd *cobra.Command) (*core.Config, error) {
 	destPath := getString(cmd, "dest-path")
-	modulePrefix := gogen.DefaultConfig.MessageModulePrefix
+	modulePrefix := core.DefaultConfig.MessageModulePrefix
 	pkgs, err := packages.Load(&packages.Config{})
 	if err == nil && len(pkgs) > 0 {
 		modulePrefix = path.Join(pkgs[0].PkgPath, destPath)
@@ -172,9 +172,9 @@ func getConfig(cmd *cobra.Command) (*gogen.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &gogen.Config{
-		RclgoImportPath:     gogen.DefaultConfig.RclgoImportPath,
-		DistroImportPath:    gogen.DefaultConfig.DistroImportPath,
+	return &core.Config{
+		RclgoImportPath:     core.DefaultConfig.RclgoImportPath,
+		DistroImportPath:    core.DefaultConfig.DistroImportPath,
 		MessageModulePrefix: modulePrefix,
 		RootPaths:           getRootPaths(cmd),
 		DestPath:            destPath,
@@ -201,11 +201,11 @@ func getRootPaths(cmd *cobra.Command) []string {
 	return paths
 }
 
-func getPackageRules(cmd *cobra.Command) (_ gogen.RuleSet, err error) {
+func getPackageRules(cmd *cobra.Command) (_ core.RuleSet, err error) {
 	includes := viper.GetStringSlice(getPrefix(cmd) + "include-package")
-	rules := make(gogen.RuleSet, len(includes))
+	rules := make(core.RuleSet, len(includes))
 	for i, pattern := range includes {
-		rules[i], err = gogen.NewRule(pattern)
+		rules[i], err = core.NewRule(pattern)
 		if err != nil {
 			return nil, err
 		}

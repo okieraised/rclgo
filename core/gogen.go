@@ -1,4 +1,4 @@
-package gogen
+package core
 
 import (
 	"errors"
@@ -55,7 +55,7 @@ type Config struct {
 
 var DefaultConfig = Config{
 	DistroImportPath:    fmt.Sprintf("github.com/okieraised/rclgo/%s", filepath.Base(os.Getenv(distro.AmentPrefixPath))),
-	RclgoImportPath:     "github.com/okieraised/rclgo/core",
+	RclgoImportPath:     fmt.Sprintf("github.com/okieraised/rclgo/%s", filepath.Base(os.Getenv(distro.AmentPrefixPath))),
 	MessageModulePrefix: "github.com/okieraised/rclgo-msgs",
 }
 
@@ -66,7 +66,7 @@ func RclgoRepoRootPath() string {
 	if !ok {
 		panic("could not determine rclgo repo root path")
 	}
-	outputPath := filepath.Join(file, fmt.Sprintf("../../../../%s", filepath.Base(os.Getenv(distro.AmentPrefixPath))))
+	outputPath := filepath.Join(file, fmt.Sprintf("../../%s", filepath.Base(os.Getenv(distro.AmentPrefixPath))))
 
 	fmt.Println(fmt.Sprintf("generating rclgo module for ROS2 [%s] in [%s]", filepath.Base(os.Getenv(distro.AmentPrefixPath)), outputPath))
 
@@ -508,6 +508,7 @@ func (g *Generator) generateMessageGoFile(parser *parser, msg *ROS2Message) erro
 			"Message":             msg,
 			"cSerializationCode":  parser.cSerializationCode,
 			"goSerializationCode": parser.goSerializationCode,
+			"ROSDistro":           filepath.Base(os.Getenv(distro.AmentPrefixPath)),
 		},
 	)
 }

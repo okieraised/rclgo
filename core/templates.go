@@ -1,4 +1,4 @@
-package gogen
+package core
 
 import "C"
 import (
@@ -71,9 +71,7 @@ package {{ $Md.GoPackage }}
 import (
 	"unsafe"
 
-	"{{.Config.RclgoImportPath}}/pkg/rclgo"
-	"{{.Config.RclgoImportPath}}/pkg/rclgo/types"
-	"{{.Config.RclgoImportPath}}/pkg/rclgo/typemap"
+	"{{.Config.RclgoImportPath}}"
 	{{range $path, $name := $Md.GoImports -}}
 	{{$name}} "{{$path}}"
 	{{""}}{{- end}}
@@ -91,8 +89,8 @@ import (
 import "C"
 
 func init() {
-	typemap.RegisterMessage("{{$Md.Package}}/{{$Md.Name}}", {{$Md.Name}}TypeSupport)
-	typemap.RegisterMessage("{{$Md.Package}}/{{$Md.Type}}/{{$Md.Name}}", {{$Md.Name}}TypeSupport)
+	{{ $.ROSDistro }}.RegisterMessage("{{$Md.Package}}/{{$Md.Name}}", {{$Md.Name}}TypeSupport)
+	{{ $.ROSDistro }}.RegisterMessage("{{$Md.Package}}/{{$Md.Type}}/{{$Md.Name}}", {{$Md.Name}}TypeSupport)
 }
 
 {{- if $Md.Constants }}
@@ -125,7 +123,7 @@ func (t *{{$Md.Name}}) Clone() *{{$Md.Name}} {
 	return c
 }
 
-func (t *{{$Md.Name}}) CloneMsg() types.Message {
+func (t *{{$Md.Name}}) CloneMsg() {{ $.ROSDistro }}.Message {
 	return t.Clone()
 }
 
@@ -135,7 +133,7 @@ func (t *{{$Md.Name}}) SetDefaults() {
 	{{- end }}
 }
 
-func (t *{{$Md.Name}}) GetTypeSupport() types.MessageTypeSupport {
+func (t *{{$Md.Name}}) GetTypeSupport() {{ $.ROSDistro }}.MessageTypeSupport {
 	return {{$Md.Name}}TypeSupport
 }
 
@@ -147,21 +145,21 @@ func (t *{{$Md.Name}}) GetTypeSupport() types.MessageTypeSupport {
 	"_CancelGoal_Request"
 	"_FeedbackMessage"
 }}
-func (t *{{$Md.Name}}) GetGoalID() *types.GoalID {
-	return (*types.GoalID)(&t.GoalID.Uuid)
+func (t *{{$Md.Name}}) GetGoalID() *{{ $.ROSDistro }}.GoalID {
+	return (*{{ $.ROSDistro }}.GoalID)(&t.GoalID.Uuid)
 }
 
-func (t *{{$Md.Name}}) SetGoalID(id *types.GoalID) {
+func (t *{{$Md.Name}}) SetGoalID(id *{{ $.ROSDistro }}.GoalID) {
 	t.GoalID.Uuid = *id
 }
 {{- end -}}
 
 {{- if actionHasSuffix $Md "_SendGoal_Request" }}
-func (t *{{$Md.Name}}) GetGoalDescription() types.Message {
+func (t *{{$Md.Name}}) GetGoalDescription() {{ $.ROSDistro }}.Message {
 	return &t.Goal
 }
 
-func (t *{{$Md.Name}}) SetGoalDescription(desc types.Message) {
+func (t *{{$Md.Name}}) SetGoalDescription(desc {{ $.ROSDistro }}.Message) {
 	t.Goal = *desc.(*{{$Md.Name | actionNameFromActionMsgName}}_Goal)
 }
 {{- end -}}
@@ -173,25 +171,25 @@ func (t *{{$Md.Name}}) GetGoalAccepted() bool {
 {{- end -}}
 
 {{ if matchMsg $Md "action_msgs_srv" "CancelGoal_Request" }}
-func (t *{{$Md.Name}}) GetGoalID() *types.GoalID {
-	return (*types.GoalID)(&t.GoalInfo.GoalId.Uuid)
+func (t *{{$Md.Name}}) GetGoalID() *{{ $.ROSDistro }}.GoalID {
+	return (*{{ $.ROSDistro }}.GoalID)(&t.GoalInfo.GoalId.Uuid)
 }
 
-func (t *{{$Md.Name}}) SetGoalID(id *types.GoalID) {
+func (t *{{$Md.Name}}) SetGoalID(id *{{ $.ROSDistro }}.GoalID) {
 	t.GoalInfo.GoalId.Uuid = *id
 }
 {{- else if matchMsg $Md "action_msgs_srv" "CancelGoal_Response" }}
 func (t *{{$Md.Name}}) CallForEach(f func(interface{})) {
 	for i := range t.GoalsCanceling {
-		f((*types.GoalID)(&t.GoalsCanceling[i].GoalId.Uuid))
+		f((*{{ $.ROSDistro }}.GoalID)(&t.GoalsCanceling[i].GoalId.Uuid))
 	}
 }
 {{- else if matchMsg $Md "action_msgs_msg" "GoalStatus" }}
-func (t *{{$Md.Name}}) GetGoalID() *types.GoalID {
-	return (*types.GoalID)(&t.GoalInfo.GoalId.Uuid)
+func (t *{{$Md.Name}}) GetGoalID() *{{ $.ROSDistro }}.GoalID {
+	return (*{{ $.ROSDistro }}.GoalID)(&t.GoalInfo.GoalId.Uuid)
 }
 
-func (t *{{$Md.Name}}) SetGoalID(id *types.GoalID) {
+func (t *{{$Md.Name}}) SetGoalID(id *{{ $.ROSDistro }}.GoalID) {
 	t.GoalInfo.GoalId.Uuid = *id
 }
 {{- else if matchMsg $Md "action_msgs_msg" "GoalStatusArray" }}
@@ -202,15 +200,15 @@ func (t *{{$Md.Name}}) CallForEach(f func(interface{})) {
 }
 {{- end }}
 
-// {{$Md.Name}}Publisher wraps rclgo.Publisher to provide type safe helper
+// {{$Md.Name}}Publisher wraps {{ $.ROSDistro }}.Publisher to provide type safe helper
 // functions
 type {{$Md.Name}}Publisher struct {
-	*rclgo.Publisher
+	*{{ $.ROSDistro }}.Publisher
 }
 
 // New{{$Md.Name}}Publisher creates and returns a new publisher for the
 // {{$Md.Name}}
-func New{{$Md.Name}}Publisher(node *rclgo.Node, topicName string, options *rclgo.PublisherOptions) (*{{$Md.Name}}Publisher, error) {
+func New{{$Md.Name}}Publisher(node *{{ $.ROSDistro }}.Node, topicName string, options *{{ $.ROSDistro }}.PublisherOptions) (*{{$Md.Name}}Publisher, error) {
 	pub, err := node.NewPublisher(topicName, {{$Md.Name}}TypeSupport, options)
 	if err != nil {
 		return nil, err
@@ -222,20 +220,20 @@ func (p *{{$Md.Name}}Publisher) Publish(msg *{{$Md.Name}}) error {
 	return p.Publisher.Publish(msg)
 }
 
-// {{$Md.Name}}Subscription wraps rclgo.Subscription to provide type safe helper
+// {{$Md.Name}}Subscription wraps {{ $.ROSDistro }}.Subscription to provide type safe helper
 // functions
 type {{$Md.Name}}Subscription struct {
-	*rclgo.Subscription
+	*{{ $.ROSDistro }}.Subscription
 }
 
 // {{$Md.Name}}SubscriptionCallback type is used to provide a subscription
 // handler function for a {{$Md.Name}}Subscription.
-type {{$Md.Name}}SubscriptionCallback func(msg *{{$Md.Name}}, info *rclgo.MessageInfo, err error)
+type {{$Md.Name}}SubscriptionCallback func(msg *{{$Md.Name}}, info *{{ $.ROSDistro }}.MessageInfo, err error)
 
 // New{{$Md.Name}}Subscription creates and returns a new subscription for the
 // {{$Md.Name}}
-func New{{$Md.Name}}Subscription(node *rclgo.Node, topicName string, opts *rclgo.SubscriptionOptions, subscriptionCallback {{$Md.Name}}SubscriptionCallback) (*{{$Md.Name}}Subscription, error) {
-	callback := func(s *rclgo.Subscription) {
+func New{{$Md.Name}}Subscription(node *{{ $.ROSDistro }}.Node, topicName string, opts *{{ $.ROSDistro }}.SubscriptionOptions, subscriptionCallback {{$Md.Name}}SubscriptionCallback) (*{{$Md.Name}}Subscription, error) {
+	callback := func(s *{{ $.ROSDistro }}.Subscription) {
 		var msg {{$Md.Name}}
 		info, err := s.TakeMessage(&msg)
 		subscriptionCallback(&msg, info, err)
@@ -247,7 +245,7 @@ func New{{$Md.Name}}Subscription(node *rclgo.Node, topicName string, opts *rclgo
 	return &{{$Md.Name}}Subscription{sub}, nil
 }
 
-func (s *{{$Md.Name}}Subscription) TakeMessage(out *{{$Md.Name}}) (*rclgo.MessageInfo, error) {
+func (s *{{$Md.Name}}Subscription) TakeMessage(out *{{$Md.Name}}) (*{{ $.ROSDistro }}.MessageInfo, error) {
 	return s.Subscription.TakeMessage(out)
 }
 
@@ -260,11 +258,11 @@ func Clone{{$Md.Name}}Slice(dst, src []{{$Md.Name}}) {
 }
 
 // Modifying this variable is undefined behavior.
-var {{$Md.Name}}TypeSupport types.MessageTypeSupport = _{{$Md.Name}}TypeSupport{}
+var {{$Md.Name}}TypeSupport {{ $.ROSDistro }}.MessageTypeSupport = _{{$Md.Name}}TypeSupport{}
 
 type _{{$Md.Name}}TypeSupport struct{}
 
-func (t _{{$Md.Name}}TypeSupport) New() types.Message {
+func (t _{{$Md.Name}}TypeSupport) New() {{ $.ROSDistro }}.Message {
 	return New{{$Md.Name}}()
 }
 
@@ -276,7 +274,7 @@ func (t _{{$Md.Name}}TypeSupport) ReleaseMemory(pointer_to_free unsafe.Pointer) 
 	C.{{$Md.Package}}__{{$Md.Type}}__{{$Md.Name}}__destroy((*C.{{$Md.Package}}__{{$Md.Type}}__{{$Md.Name}})(pointer_to_free))
 }
 
-func (t _{{$Md.Name}}TypeSupport) AsCStruct(dst unsafe.Pointer, msg types.Message) {
+func (t _{{$Md.Name}}TypeSupport) AsCStruct(dst unsafe.Pointer, msg {{ $.ROSDistro }}.Message) {
 	{{ if $Md.Fields -}}
 	m := msg.(*{{$Md.Name}})
 	mem := (*C.{{$Md.Package}}__{{$Md.Type}}__{{$Md.Name}})(dst)
@@ -286,7 +284,7 @@ func (t _{{$Md.Name}}TypeSupport) AsCStruct(dst unsafe.Pointer, msg types.Messag
 	{{- end }}
 }
 
-func (t _{{$Md.Name}}TypeSupport) AsGoStruct(msg types.Message, ros2_message_buffer unsafe.Pointer) {
+func (t _{{$Md.Name}}TypeSupport) AsGoStruct(msg {{ $.ROSDistro }}.Message, ros2_message_buffer unsafe.Pointer) {
 	{{if $Md.Fields -}}
 	m := msg.(*{{$Md.Name}})
 	mem := (*C.{{$Md.Package}}__{{$Md.Type}}__{{$Md.Name}})(ros2_message_buffer)
@@ -367,23 +365,21 @@ import (
 	"errors"
 	"unsafe"
 
-	"{{.Config.RclgoImportPath}}/pkg/rclgo"
-	"{{.Config.RclgoImportPath}}/pkg/rclgo/typemap"
-	"{{.Config.RclgoImportPath}}/pkg/rclgo/types"
+	"{{.Config.RclgoImportPath}}"
 )
 
 func init() {
-	typemap.RegisterService("{{.Service.Package}}/{{.Service.Name}}", {{ .Service.Name }}TypeSupport)
-	typemap.RegisterService("{{.Service.Package}}/{{.Service.Type}}/{{.Service.Name}}", {{ .Service.Name }}TypeSupport)
+	{{ $.ROSDistro }}.RegisterService("{{.Service.Package}}/{{.Service.Name}}", {{ .Service.Name }}TypeSupport)
+	{{ $.ROSDistro }}.RegisterService("{{.Service.Package}}/{{.Service.Type}}/{{.Service.Name}}", {{ .Service.Name }}TypeSupport)
 }
 
 type _{{.Service.Name}}TypeSupport struct {}
 
-func (s _{{.Service.Name}}TypeSupport) Request() types.MessageTypeSupport {
+func (s _{{.Service.Name}}TypeSupport) Request() {{ $.ROSDistro }}.MessageTypeSupport {
 	return {{.Service.Request.Name}}TypeSupport
 }
 
-func (s _{{.Service.Name}}TypeSupport) Response() types.MessageTypeSupport {
+func (s _{{.Service.Name}}TypeSupport) Response() {{ $.ROSDistro }}.MessageTypeSupport {
 	return {{.Service.Response.Name}}TypeSupport
 }
 
@@ -392,17 +388,17 @@ func (s _{{.Service.Name}}TypeSupport) TypeSupport() unsafe.Pointer {
 }
 
 // Modifying this variable is undefined behavior.
-var {{ .Service.Name }}TypeSupport types.ServiceTypeSupport = _{{.Service.Name}}TypeSupport{}
+var {{ .Service.Name }}TypeSupport {{ $.ROSDistro }}.ServiceTypeSupport = _{{.Service.Name}}TypeSupport{}
 
-// {{.Service.Name}}Client wraps rclgo.Client to provide type safe helper
+// {{.Service.Name}}Client wraps {{ $.ROSDistro }}.Client to provide type safe helper
 // functions
 type {{.Service.Name}}Client struct {
-	*rclgo.Client
+	*{{ $.ROSDistro }}.Client
 }
 
 // New{{.Service.Name}}Client creates and returns a new client for the
 // {{.Service.Name}}
-func New{{.Service.Name}}Client(node *rclgo.Node, serviceName string, options *rclgo.ClientOptions) (*{{.Service.Name}}Client, error) {
+func New{{.Service.Name}}Client(node *{{ $.ROSDistro }}.Node, serviceName string, options *{{ $.ROSDistro }}.ClientOptions) (*{{.Service.Name}}Client, error) {
 	client, err := node.NewClient(serviceName, {{.Service.Name}}TypeSupport, options)
 	if err != nil {
 		return nil, err
@@ -410,7 +406,7 @@ func New{{.Service.Name}}Client(node *rclgo.Node, serviceName string, options *r
 	return &{{.Service.Name}}Client{client}, nil
 }
 
-func (s *{{.Service.Name}}Client) Send(ctx context.Context, req *{{.Service.Request.Name}}) (*{{.Service.Response.Name}}, *rclgo.ServiceInfo, error) {
+func (s *{{.Service.Name}}Client) Send(ctx context.Context, req *{{.Service.Request.Name}}) (*{{.Service.Response.Name}}, *{{ $.ROSDistro }}.ServiceInfo, error) {
 	msg, rmw, err := s.Client.Send(ctx, req)
 	if err != nil {
 		return nil, rmw, err
@@ -423,25 +419,25 @@ func (s *{{.Service.Name}}Client) Send(ctx context.Context, req *{{.Service.Requ
 }
 
 type {{.Service.Name}}ServiceResponseSender struct {
-	sender rclgo.ServiceResponseSender
+	sender {{ $.ROSDistro }}.ServiceResponseSender
 }
 
 func (s {{.Service.Name}}ServiceResponseSender) SendResponse(resp *{{.Service.Response.Name}}) error {
 	return s.sender.SendResponse(resp)
 }
 
-type {{.Service.Name}}ServiceRequestHandler func(*rclgo.ServiceInfo, *{{.Service.Request.Name}}, {{.Service.Name}}ServiceResponseSender)
+type {{.Service.Name}}ServiceRequestHandler func(*{{ $.ROSDistro }}.ServiceInfo, *{{.Service.Request.Name}}, {{.Service.Name}}ServiceResponseSender)
 
-// {{.Service.Name}}Service wraps rclgo.Service to provide type safe helper
+// {{.Service.Name}}Service wraps {{ $.ROSDistro }}.Service to provide type safe helper
 // functions
 type {{.Service.Name}}Service struct {
-	*rclgo.Service
+	*{{ $.ROSDistro }}.Service
 }
 
 // New{{.Service.Name}}Service creates and returns a new service for the
 // {{.Service.Name}}
-func New{{.Service.Name}}Service(node *rclgo.Node, name string, options *rclgo.ServiceOptions, handler {{.Service.Name}}ServiceRequestHandler) (*{{.Service.Name}}Service, error) {
-	h := func(rmw *rclgo.ServiceInfo, msg types.Message, rs rclgo.ServiceResponseSender) {
+func New{{.Service.Name}}Service(node *{{ $.ROSDistro }}.Node, name string, options *{{ $.ROSDistro }}.ServiceOptions, handler {{.Service.Name}}ServiceRequestHandler) (*{{.Service.Name}}Service, error) {
+	h := func(rmw *{{ $.ROSDistro }}.ServiceInfo, msg {{ $.ROSDistro }}.Message, rs {{ $.ROSDistro }}.ServiceResponseSender) {
 		m := msg.(*{{.Service.Request.Name}})
 		responseSender := {{.Service.Name}}ServiceResponseSender{sender: rs} 
 		handler(rmw, m, responseSender)
@@ -473,30 +469,28 @@ import (
 	"time"
 	"unsafe"
 
-	"{{.Config.RclgoImportPath}}/pkg/rclgo"
-	"{{.Config.RclgoImportPath}}/pkg/rclgo/typemap"
-	"{{.Config.RclgoImportPath}}/pkg/rclgo/types"
+	"{{.Config.RclgoImportPath}}"
 
 	action_msgs_msg "{{.Config.MessageModulePrefix}}/action_msgs/msg"
 	action_msgs_srv "{{.Config.MessageModulePrefix}}/action_msgs/srv"
 )
 
 func init() {
-	typemap.RegisterAction("{{.Action.Package}}/{{.Action.Name}}", {{ .Action.Name }}TypeSupport)
-	typemap.RegisterAction("{{.Action.Package}}/{{.Action.Type}}/{{.Action.Name}}", {{ .Action.Name }}TypeSupport)
+	{{ $.ROSDistro }}.RegisterAction("{{.Action.Package}}/{{.Action.Name}}", {{ .Action.Name }}TypeSupport)
+	{{ $.ROSDistro }}.RegisterAction("{{.Action.Package}}/{{.Action.Type}}/{{.Action.Name}}", {{ .Action.Name }}TypeSupport)
 }
 
 type _{{.Action.Name}}TypeSupport struct {}
 
-func (s _{{.Action.Name}}TypeSupport) Goal() types.MessageTypeSupport {
+func (s _{{.Action.Name}}TypeSupport) Goal() {{ $.ROSDistro }}.MessageTypeSupport {
 	return {{.Action.Goal.Name}}TypeSupport
 }
 
-func (s _{{.Action.Name}}TypeSupport) SendGoal() types.ServiceTypeSupport {
+func (s _{{.Action.Name}}TypeSupport) SendGoal() {{ $.ROSDistro }}.ServiceTypeSupport {
 	return {{.Action.SendGoal.Name}}TypeSupport
 }
 
-func (s _{{.Action.Name}}TypeSupport) NewSendGoalResponse(accepted bool, stamp time.Duration) types.Message {
+func (s _{{.Action.Name}}TypeSupport) NewSendGoalResponse(accepted bool, stamp time.Duration) {{ $.ROSDistro }}.Message {
 	msg := New{{.Action.Name}}_SendGoal_Response()
 	msg.Accepted = accepted
 	secs := stamp.Truncate(time.Second)
@@ -505,15 +499,15 @@ func (s _{{.Action.Name}}TypeSupport) NewSendGoalResponse(accepted bool, stamp t
 	return msg
 }
 
-func (s _{{.Action.Name}}TypeSupport) Result() types.MessageTypeSupport {
+func (s _{{.Action.Name}}TypeSupport) Result() {{ $.ROSDistro }}.MessageTypeSupport {
 	return {{.Action.Result.Name}}TypeSupport
 }
 
-func (s _{{.Action.Name}}TypeSupport) GetResult() types.ServiceTypeSupport {
+func (s _{{.Action.Name}}TypeSupport) GetResult() {{ $.ROSDistro }}.ServiceTypeSupport {
 	return {{.Action.GetResult.Name}}TypeSupport
 }
 
-func (s _{{.Action.Name}}TypeSupport) NewGetResultResponse(status int8, result types.Message) types.Message {
+func (s _{{.Action.Name}}TypeSupport) NewGetResultResponse(status int8, result types.Message) {{ $.ROSDistro }}.Message {
 	msg := New{{.Action.Name}}_GetResult_Response()
 	msg.Status = status
 	if result == nil {
@@ -524,26 +518,26 @@ func (s _{{.Action.Name}}TypeSupport) NewGetResultResponse(status int8, result t
 	return msg
 }
 
-func (s _{{.Action.Name}}TypeSupport) CancelGoal() types.ServiceTypeSupport {
+func (s _{{.Action.Name}}TypeSupport) CancelGoal() {{ $.ROSDistro }}.ServiceTypeSupport {
 	return action_msgs_srv.CancelGoalTypeSupport
 }
 
-func (s _{{.Action.Name}}TypeSupport) Feedback() types.MessageTypeSupport {
+func (s _{{.Action.Name}}TypeSupport) Feedback() {{ $.ROSDistro }}.MessageTypeSupport {
 	return {{.Action.Feedback.Name}}TypeSupport
 }
 
-func (s _{{.Action.Name}}TypeSupport) FeedbackMessage() types.MessageTypeSupport {
+func (s _{{.Action.Name}}TypeSupport) FeedbackMessage() {{ $.ROSDistro }}.MessageTypeSupport {
 	return {{.Action.FeedbackMessage.Name}}TypeSupport
 }
 
-func (s _{{.Action.Name}}TypeSupport) NewFeedbackMessage(goalID *types.GoalID, feedback types.Message) types.Message {
+func (s _{{.Action.Name}}TypeSupport) NewFeedbackMessage(goalID *{{ $.ROSDistro }}.GoalID, feedback {{ $.ROSDistro }}.Message) {{ $.ROSDistro }}.Message {
 	msg := New{{.Action.Name}}_FeedbackMessage()
 	msg.GoalID.Uuid = *goalID
 	msg.Feedback = *feedback.(*{{.Action.Name}}_Feedback)
 	return msg
 }
 
-func (s _{{.Action.Name}}TypeSupport) GoalStatusArray() types.MessageTypeSupport {
+func (s _{{.Action.Name}}TypeSupport) GoalStatusArray() {{ $.ROSDistro }}.MessageTypeSupport {
 	return action_msgs_msg.GoalStatusArrayTypeSupport
 }
 
@@ -552,10 +546,10 @@ func (s _{{.Action.Name}}TypeSupport) TypeSupport() unsafe.Pointer {
 }
 
 // Modifying this variable is undefined behavior.
-var {{.Action.Name}}TypeSupport types.ActionTypeSupport = _{{.Action.Name}}TypeSupport{}
+var {{.Action.Name}}TypeSupport {{ $.ROSDistro }}.ActionTypeSupport = _{{.Action.Name}}TypeSupport{}
 
 type {{.Action.Name}}FeedbackSender struct {
-	sender rclgo.FeedbackSender
+	sender {{ $.ROSDistro }}.FeedbackSender
 }
 
 func (s *{{.Action.Name}}FeedbackSender) Send(msg *{{.Action.Name}}_Feedback) error {
@@ -563,7 +557,7 @@ func (s *{{.Action.Name}}FeedbackSender) Send(msg *{{.Action.Name}}_Feedback) er
 }
 
 type {{.Action.Name}}GoalHandle struct{
-	*rclgo.GoalHandle
+	*{{ $.ROSDistro }}.GoalHandle
 
 	Description *{{.Action.Name}}_Goal
 }
@@ -598,22 +592,22 @@ type _{{.Action.Name}}Action struct {
 	action {{.Action.Name}}Action
 }
 
-func (a _{{.Action.Name}}Action) ExecuteGoal(ctx context.Context, handle *rclgo.GoalHandle) (types.Message, error) {
+func (a _{{.Action.Name}}Action) ExecuteGoal(ctx context.Context, handle *{{ $.ROSDistro }}.GoalHandle) ({{ $.ROSDistro }}.Message, error) {
 	return a.action.ExecuteGoal(ctx, &{{.Action.Name}}GoalHandle{
 		GoalHandle:  handle,
 		Description: handle.Description.(*{{.Action.Name}}_Goal),
 	})
 }
 
-func (a _{{.Action.Name}}Action) TypeSupport() types.ActionTypeSupport {
+func (a _{{.Action.Name}}Action) TypeSupport() {{ $.ROSDistro }}.ActionTypeSupport {
 	return {{.Action.Name}}TypeSupport
 }
 
 type {{.Action.Name}}Server struct{
-	*rclgo.ActionServer
+	*{{ $.ROSDistro }}.ActionServer
 }
 
-func New{{.Action.Name}}Server(node *rclgo.Node, name string, action {{.Action.Name}}Action, opts *rclgo.ActionServerOptions) (*{{.Action.Name}}Server, error) {
+func New{{.Action.Name}}Server(node *{{ $.ROSDistro }}.Node, name string, action {{.Action.Name}}Action, opts *{{ $.ROSDistro }}.ActionServerOptions) (*{{.Action.Name}}Server, error) {
 	server, err := node.NewActionServer(name, _{{.Action.Name}}Action{action}, opts)
 	if err != nil {
 		return nil, err
@@ -626,10 +620,10 @@ type {{.Action.Name}}FeedbackHandler func(context.Context, *{{.Action.Name}}_Fee
 type {{.Action.Name}}StatusHandler func(context.Context, *action_msgs_msg.GoalStatus)
 
 type {{.Action.Name}}Client struct{
-	*rclgo.ActionClient
+	*{{ $.ROSDistro }}.ActionClient
 }
 
-func New{{.Action.Name}}Client(node *rclgo.Node, name string, opts *rclgo.ActionClientOptions) (*{{.Action.Name}}Client, error) {
+func New{{.Action.Name}}Client(node *{{ $.ROSDistro }}.Node, name string, opts *{{ $.ROSDistro }}.ActionClientOptions) (*{{.Action.Name}}Client, error) {
 	client, err := node.NewActionClient(name, {{.Action.Name}}TypeSupport, opts)
 	if err != nil {
 		return nil, err
@@ -637,14 +631,14 @@ func New{{.Action.Name}}Client(node *rclgo.Node, name string, opts *rclgo.Action
 	return &{{.Action.Name}}Client{client}, nil
 }
 
-func (c *{{.Action.Name}}Client) WatchGoal(ctx context.Context, goal *{{.Action.Name}}_Goal, onFeedback {{.Action.Name}}FeedbackHandler) (*{{.Action.Name}}_GetResult_Response, *types.GoalID, error) {
-	var resp types.Message
-	var goalID *types.GoalID
+func (c *{{.Action.Name}}Client) WatchGoal(ctx context.Context, goal *{{.Action.Name}}_Goal, onFeedback {{.Action.Name}}FeedbackHandler) (*{{.Action.Name}}_GetResult_Response, *{{ $.ROSDistro }}.GoalID, error) {
+	var resp {{ $.ROSDistro }}.Message
+	var goalID *{{ $.ROSDistro }}.GoalID
 	var err error
 	if onFeedback == nil {
 		resp, goalID, err = c.ActionClient.WatchGoal(ctx, goal, nil)
 	} else {
-		resp, goalID, err = c.ActionClient.WatchGoal(ctx, goal, func(ctx context.Context, msg types.Message) {
+		resp, goalID, err = c.ActionClient.WatchGoal(ctx, goal, func(ctx context.Context, msg {{ $.ROSDistro }}.Message) {
 			onFeedback(ctx, msg.(*{{.Action.Name}}_FeedbackMessage))
 		})
 	}
@@ -654,7 +648,7 @@ func (c *{{.Action.Name}}Client) WatchGoal(ctx context.Context, goal *{{.Action.
 	return nil, goalID, err
 }
 
-func (c *{{.Action.Name}}Client) SendGoal(ctx context.Context, goal *{{.Action.Name}}_Goal) (*{{.Action.Name}}_SendGoal_Response, *types.GoalID, error) {
+func (c *{{.Action.Name}}Client) SendGoal(ctx context.Context, goal *{{.Action.Name}}_Goal) (*{{.Action.Name}}_SendGoal_Response, *{{ $.ROSDistro }}.GoalID, error) {
 	resp, id, err := c.ActionClient.SendGoal(ctx, goal)
 	if r, ok := resp.(*{{.Action.Name}}_SendGoal_Response); ok {
 		return r, id, err
@@ -670,7 +664,7 @@ func (c *{{.Action.Name}}Client) SendGoalRequest(ctx context.Context, request *{
 	return nil, err
 }
 
-func (c *{{.Action.Name}}Client) GetResult(ctx context.Context, goalID *types.GoalID) (*{{.Action.Name}}_GetResult_Response, error) {
+func (c *{{.Action.Name}}Client) GetResult(ctx context.Context, goalID *{{ $.ROSDistro }}.GoalID) (*{{.Action.Name}}_GetResult_Response, error) {
 	resp, err := c.ActionClient.GetResult(ctx, goalID)
 	if r, ok := resp.(*{{.Action.Name}}_GetResult_Response); ok {
 		return r, err
@@ -686,14 +680,14 @@ func (c *{{.Action.Name}}Client) CancelGoal(ctx context.Context, request *action
 	return nil, err
 }
 
-func (c *{{.Action.Name}}Client) WatchFeedback(ctx context.Context, goalID *types.GoalID, handler {{.Action.Name}}FeedbackHandler) <-chan error {
-	return c.ActionClient.WatchFeedback(ctx, goalID, func(ctx context.Context, msg types.Message) {
+func (c *{{.Action.Name}}Client) WatchFeedback(ctx context.Context, goalID *{{ $.ROSDistro }}.GoalID, handler {{.Action.Name}}FeedbackHandler) <-chan error {
+	return c.ActionClient.WatchFeedback(ctx, goalID, func(ctx context.Context, msg {{ $.ROSDistro }}.Message) {
 		handler(ctx, msg.(*{{.Action.Name}}_FeedbackMessage))
 	})
 }
 
-func (c *{{.Action.Name}}Client) WatchStatus(ctx context.Context, goalID *types.GoalID, handler {{.Action.Name}}StatusHandler) <-chan error {
-	return c.ActionClient.WatchStatus(ctx, goalID, func(ctx context.Context, msg types.Message) {
+func (c *{{.Action.Name}}Client) WatchStatus(ctx context.Context, goalID *{{ $.ROSDistro }}.GoalID, handler {{.Action.Name}}StatusHandler) <-chan error {
+	return c.ActionClient.WatchStatus(ctx, goalID, func(ctx context.Context, msg {{ $.ROSDistro }}.Message) {
 		handler(ctx, msg.(*action_msgs_msg.GoalStatus))
 	})
 }
@@ -950,7 +944,7 @@ var ros2ErrorCodes = template.Must(
 	template.New("ros2ErrorCodes").Funcs(templateFuncMap).Parse(
 		`// Code generated by ros2gen. DO NOT EDIT.
 {{ $P := . }}
-package rclgo
+package {{ $.ROSDistro }}
 
 /*
 {{- range $file := .includes }}

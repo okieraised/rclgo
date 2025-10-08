@@ -1,4 +1,4 @@
-package rclgo
+package humble
 
 // #include <rcl/logging.h> //nolint:all
 import "C"

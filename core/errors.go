@@ -1,4 +1,4 @@
-package gogen
+package core
 
 import (
 	"fmt"
@@ -37,7 +37,7 @@ func prepareErrorTypesCFileRegexp() {
 }
 
 func (g *Generator) GenerateROS2ErrorTypes() error {
-	destFilePath := filepath.Join(g.config.DestPath, "../core/pkg/rclgo/error_types.gen.go")
+	destFilePath := filepath.Join(g.config.DestPath, "error_types.gen.go")
 	var errorTypes []*ROS2ErrorType
 
 	for _, root := range g.config.RootPaths {

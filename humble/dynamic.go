@@ -1,4 +1,4 @@
-package rclgo
+package humble
 
 /*
 #cgo LDFLAGS: -ldl
@@ -74,8 +74,6 @@ import (
 	"fmt"
 	"runtime"
 	"unsafe"
-
-	"github.com/okieraised/rclgo/core/pkg/rclgo/types"
 )
 
 type dynamicMessageTypeSupport struct {
@@ -92,7 +90,7 @@ type dynamicMessageTypeSupport struct {
 //
 // Backward compatibility is not guaranteed for this API. Use it only if
 // necessary.
-func LoadDynamicMessageTypeSupport(pkgName, msgName string) (types.MessageTypeSupport, error) {
+func LoadDynamicMessageTypeSupport(pkgName, msgName string) (MessageTypeSupport, error) {
 	cPkgName := C.CString(pkgName)
 	defer C.free(unsafe.Pointer(cPkgName))
 	cIFaceName := C.CString(msgName)
@@ -108,7 +106,7 @@ func LoadDynamicMessageTypeSupport(pkgName, msgName string) (types.MessageTypeSu
 	return ts, nil
 }
 
-func (g *dynamicMessageTypeSupport) New() types.Message {
+func (g *dynamicMessageTypeSupport) New() Message {
 	panic("not supported")
 }
 
@@ -120,11 +118,11 @@ func (g *dynamicMessageTypeSupport) ReleaseMemory(unsafe.Pointer) {
 	panic("not supported")
 }
 
-func (g *dynamicMessageTypeSupport) AsCStruct(unsafe.Pointer, types.Message) {
+func (g *dynamicMessageTypeSupport) AsCStruct(unsafe.Pointer, Message) {
 	panic("not supported")
 }
 
-func (g *dynamicMessageTypeSupport) AsGoStruct(types.Message, unsafe.Pointer) {
+func (g *dynamicMessageTypeSupport) AsGoStruct(Message, unsafe.Pointer) {
 	panic("not supported")
 }
 

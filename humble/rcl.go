@@ -1,4 +1,4 @@
-package rclgo
+package humble
 
 // #include <stdlib.h>
 // #include <string.h>
@@ -22,8 +22,6 @@ import (
 	"sync"
 	"time"
 	"unsafe"
-
-	"github.com/okieraised/rclgo/core/pkg/rclgo/types"
 )
 
 type MessageInfo struct {
@@ -159,7 +157,7 @@ func (m *serializedMessage) ToSlice() []byte {
 }
 
 // Serialize returns the serialized form of msg as a byte slice.
-func Serialize(msg types.Message) (buf []byte, err error) {
+func Serialize(msg Message) (buf []byte, err error) {
 	defer wrapErr("failed to serialize: %v", &err)
 	ts := msg.GetTypeSupport()
 	cMsg := ts.PrepareMemory()
@@ -183,7 +181,7 @@ func Serialize(msg types.Message) (buf []byte, err error) {
 
 // Deserialize deserializes buf to a message whose type support is ts. The
 // contents of buf must match ts.
-func Deserialize(buf []byte, ts types.MessageTypeSupport) (msg types.Message, err error) {
+func Deserialize(buf []byte, ts MessageTypeSupport) (msg Message, err error) {
 	defer wrapErr("failed to deserialize: %v", &err)
 	serialized, err := newSerializedMessage(len(buf))
 	if err != nil {
@@ -397,7 +395,7 @@ func NewDefaultPublisherOptions() *PublisherOptions {
 type Publisher struct {
 	rosID
 	TopicName     string
-	typeSupport   types.MessageTypeSupport
+	typeSupport   MessageTypeSupport
 	node          *Node
 	rclPublisherT *C.rcl_publisher_t
 	topicName     *C.char
@@ -409,7 +407,7 @@ type Publisher struct {
 // nil, default options are used.
 func (n *Node) NewPublisher(
 	topicName string,
-	ros2msg types.MessageTypeSupport,
+	ros2msg MessageTypeSupport,
 	options *PublisherOptions,
 ) (pub *Publisher, err error) {
 	if options == nil {
@@ -448,7 +446,7 @@ func (p *Publisher) Node() *Node {
 	return p.node
 }
 
-func (p *Publisher) Publish(ros2msg types.Message) error {
+func (p *Publisher) Publish(ros2msg Message) error {
 	var rc C.rcl_ret_t
 
 	ptr := p.typeSupport.PrepareMemory()
@@ -660,7 +658,7 @@ type Subscription struct {
 	rosID
 	waitable         singleUse
 	TopicName        string
-	Ros2MsgType      types.MessageTypeSupport
+	Ros2MsgType      MessageTypeSupport
 	Callback         SubscriptionCallback
 	node             *Node
 	rclSubscriptionT *C.rcl_subscription_t
@@ -673,7 +671,7 @@ type Subscription struct {
 // nil, default options are used.
 func (n *Node) NewSubscription(
 	topicName string,
-	ros2msg types.MessageTypeSupport,
+	ros2msg MessageTypeSupport,
 	options *SubscriptionOptions,
 	subscriptionCallback SubscriptionCallback,
 ) (sub *Subscription, err error) {
@@ -714,7 +712,7 @@ func (s *Subscription) Node() *Node {
 	return s.node
 }
 
-func (s *Subscription) TakeMessage(out types.Message) (*MessageInfo, error) {
+func (s *Subscription) TakeMessage(out Message) (*MessageInfo, error) {
 	rmwMessageInfo := C.rmw_get_zero_initialized_message_info()
 
 	ros2MsgReceiveBuffer := s.Ros2MsgType.PrepareMemory()
@@ -853,16 +851,16 @@ func NewDefaultServiceOptions() *ServiceOptions {
 }
 
 type ServiceResponseSender interface {
-	SendResponse(resp types.Message) error
+	SendResponse(resp Message) error
 }
 
-type serviceResponseSender func(resp types.Message) error
+type serviceResponseSender func(resp Message) error
 
-func (s serviceResponseSender) SendResponse(resp types.Message) error {
+func (s serviceResponseSender) SendResponse(resp Message) error {
 	return s(resp)
 }
 
-type ServiceRequestHandler func(*ServiceInfo, types.Message, ServiceResponseSender)
+type ServiceRequestHandler func(*ServiceInfo, Message, ServiceResponseSender)
 
 type Service struct {
 	rosID
@@ -871,8 +869,8 @@ type Service struct {
 	rclService          *C.rcl_service_t
 	name                *C.char
 	handler             ServiceRequestHandler
-	requestTypeSupport  types.MessageTypeSupport
-	responseTypeSupport types.MessageTypeSupport
+	requestTypeSupport  MessageTypeSupport
+	responseTypeSupport MessageTypeSupport
 }
 
 // NewService creates a new service.
@@ -881,7 +879,7 @@ type Service struct {
 // nil, default options are used.
 func (n *Node) NewService(
 	name string,
-	typeSupport types.ServiceTypeSupport,
+	typeSupport ServiceTypeSupport,
 	options *ServiceOptions,
 	handler ServiceRequestHandler,
 ) (s *Service, err error) {
@@ -950,7 +948,7 @@ func (s *Service) handleRequest() {
 		s.handler(
 			&info,
 			req,
-			serviceResponseSender(func(resp types.Message) error {
+			serviceResponseSender(func(resp Message) error {
 				respBuffer := s.responseTypeSupport.PrepareMemory()
 				defer s.responseTypeSupport.ReleaseMemory(respBuffer)
 				s.responseTypeSupport.AsCStruct(respBuffer, resp)
@@ -992,7 +990,7 @@ type Client struct {
 // nil, default options are used.
 func (n *Node) NewClient(
 	serviceName string,
-	typeSupport types.ServiceTypeSupport,
+	typeSupport ServiceTypeSupport,
 	options *ClientOptions,
 ) (c *Client, err error) {
 	if options == nil {
@@ -1049,7 +1047,7 @@ func (c *Client) Node() *Node {
 	return c.node
 }
 
-func (c *Client) Send(ctx context.Context, req types.Message) (types.Message, *ServiceInfo, error) {
+func (c *Client) Send(ctx context.Context, req Message) (Message, *ServiceInfo, error) {
 	resp, info, err := c.sender.Send(ctx, req)
 	if rmwInfo, ok := info.(*ServiceInfo); ok {
 		return resp, rmwInfo, err
@@ -1086,14 +1084,14 @@ func (c *Client) takeResponse(resp unsafe.Pointer) (C.int64_t, interface{}, erro
 var errTakeFailed = errors.New("take failed")
 
 type sendResult struct {
-	resp      types.Message
+	resp      Message
 	otherData interface{}
 }
 
 type requestSenderTransport struct {
 	SendRequest  func(unsafe.Pointer) (C.int64_t, error)
 	TakeResponse func(unsafe.Pointer) (C.int64_t, interface{}, error)
-	TypeSupport  types.ServiceTypeSupport
+	TypeSupport  ServiceTypeSupport
 	Logger       *Logger
 }
 
@@ -1120,7 +1118,7 @@ func (s *requestSender) Close() error {
 	return nil
 }
 
-func (s *requestSender) Send(ctx context.Context, req types.Message) (types.Message, interface{}, error) {
+func (s *requestSender) Send(ctx context.Context, req Message) (Message, interface{}, error) {
 	resultChan, seqNum, err := s.addPendingRequest(req)
 	if err != nil {
 		return nil, nil, err
@@ -1141,7 +1139,7 @@ func (s *requestSender) Send(ctx context.Context, req types.Message) (types.Mess
 	}
 }
 
-func (s *requestSender) addPendingRequest(req types.Message) (<-chan *sendResult, C.int64_t, error) {
+func (s *requestSender) addPendingRequest(req Message) (<-chan *sendResult, C.int64_t, error) {
 	ts := s.transport.TypeSupport.Request()
 	buf := ts.PrepareMemory()
 	defer ts.ReleaseMemory(buf)
