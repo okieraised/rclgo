@@ -1,6 +1,6 @@
 package rclgo
 
-// #include <rcl/logging.h>
+// #include <rcl/logging.h> //nolint:all
 import "C"
 import "unsafe"
 

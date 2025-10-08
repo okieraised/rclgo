@@ -58,17 +58,13 @@ type GoalStatus int8
 //go:generate go run golang.org/x/tools/cmd/stringer -type GoalStatus -linecomment
 
 const (
-	GoalUnknown GoalStatus = iota // Unknown
-
-	// Active states
-	GoalAccepted  // Accepted
-	GoalExecuting // Executing
-	GoalCanceling // Canceling
-
-	// Terminal states
-	GoalSucceeded // Succeeded
-	GoalCanceled  // Canceled
-	GoalAborted   // Aborted
+	GoalUnknown   GoalStatus = iota // Unknown
+	GoalAccepted                    // Accepted
+	GoalExecuting                   // Executing
+	GoalCanceling                   // Canceling
+	GoalSucceeded                   // Succeeded
+	GoalCanceled                    // Canceled
+	GoalAborted                     // Aborted
 )
 
 // FeedbackSender is used to send feedback about a goal.

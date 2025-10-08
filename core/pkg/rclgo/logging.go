@@ -280,22 +280,27 @@ func sPrintln(a ...interface{}) string {
 	return b[:len(b)-1]
 }
 
-func (l *Logger) LogLn(level LogSeverity, a ...interface{}) error {
+func (l *Logger) Logln(level LogSeverity, a ...interface{}) error {
 	return logNamed(level, l.name, sPrintln(a...))
 }
-func (l *Logger) DebugLn(a ...interface{}) error {
+
+func (l *Logger) Debugln(a ...interface{}) error {
 	return logNamed(LogSeverityDebug, l.name, sPrintln(a...))
 }
-func (l *Logger) InfoLn(a ...interface{}) error {
+
+func (l *Logger) Infoln(a ...interface{}) error {
 	return logNamed(LogSeverityInfo, l.name, sPrintln(a...))
 }
-func (l *Logger) WarnLn(a ...interface{}) error {
+
+func (l *Logger) Warnln(a ...interface{}) error {
 	return logNamed(LogSeverityWarn, l.name, sPrintln(a...))
 }
-func (l *Logger) ErrorLn(a ...interface{}) error {
+
+func (l *Logger) Errorln(a ...interface{}) error {
 	return logNamed(LogSeverityError, l.name, sPrintln(a...))
 }
-func (l *Logger) FatalLn(a ...interface{}) error {
+
+func (l *Logger) Fatalln(a ...interface{}) error {
 	return logNamed(LogSeverityFatal, l.name, sPrintln(a...))
 }
 
@@ -303,18 +308,22 @@ func (l *Logger) Logf(level LogSeverity, format string, a ...interface{}) error 
 	return logNamed(level, l.name, fmt.Sprintf(format, a...))
 }
 
-func (l *Logger) DebugF(format string, a ...interface{}) error {
+func (l *Logger) Debugf(format string, a ...interface{}) error {
 	return logNamed(LogSeverityDebug, l.name, fmt.Sprintf(format, a...))
 }
-func (l *Logger) InfoF(format string, a ...interface{}) error {
+
+func (l *Logger) Infof(format string, a ...interface{}) error {
 	return logNamed(LogSeverityInfo, l.name, fmt.Sprintf(format, a...))
 }
-func (l *Logger) WarnF(format string, a ...interface{}) error {
+
+func (l *Logger) Warnf(format string, a ...interface{}) error {
 	return logNamed(LogSeverityWarn, l.name, fmt.Sprintf(format, a...))
 }
-func (l *Logger) ErrorF(format string, a ...interface{}) error {
+
+func (l *Logger) Errorf(format string, a ...interface{}) error {
 	return logNamed(LogSeverityError, l.name, fmt.Sprintf(format, a...))
 }
-func (l *Logger) FatalF(format string, a ...interface{}) error {
+
+func (l *Logger) Fatalf(format string, a ...interface{}) error {
 	return logNamed(LogSeverityFatal, l.name, fmt.Sprintf(format, a...))
 }

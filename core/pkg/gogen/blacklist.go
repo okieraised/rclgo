@@ -13,7 +13,6 @@ var (
 
 func init() { prepareBlacklistMatchingRegexp() }
 
-// Build one union regex with a named group per rule: (?P<r0>pat0)|(?P<r1>pat1)|...
 func prepareBlacklistMatchingRegexp() {
 	if len(blacklistedMessages) == 0 {
 		blacklistRe = nil

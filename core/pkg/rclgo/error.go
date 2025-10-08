@@ -1,8 +1,8 @@
 package rclgo
 
 /*
-#include <rcl/types.h>
-#include <rcutils/error_handling.h>
+#include <rcl/types.h> //nolint:all
+#include <rcutils/error_handling.h> //nolint:all
 */
 import "C"
 import "fmt"

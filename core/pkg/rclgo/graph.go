@@ -9,10 +9,7 @@ import (
 )
 
 // GetTopicNamesAndTypes returns a map of all known topic names to corresponding
-// topic types. Note that multiple types may be associated with a single topic.
-//
-// If demangle is true, topic names will be in the format used by the underlying
-// middleware.
+// topic types. If demangle is true, topic names will be in the format used by the underlying middleware.
 func (n *Node) GetTopicNamesAndTypes(demangle bool) (map[string][]string, error) {
 	return n.getNamesAndTypes("", "", func(node, namespace *C.char, namesAndTypes *C.rmw_names_and_types_t) C.int {
 		return C.rcl_get_topic_names_and_types(

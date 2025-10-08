@@ -1,11 +1,11 @@
 package rclgo
 
 /*
-   #include <rcl/context.h>
-   #include <rcl/init_options.h>
-   #include <rcl/init.h>
-   #include <rcl/time.h>
-   #include <rcutils/allocator.h>
+   #include <rcl/context.h> //nolint:all
+   #include <rcl/init_options.h> //nolint:all
+   #include <rcl/init.h> //nolint:all
+   #include <rcl/time.h> //nolint:all
+   #include <rcutils/allocator.h> //nolint:all
 */
 import "C"
 

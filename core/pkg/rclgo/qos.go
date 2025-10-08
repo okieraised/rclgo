@@ -1,6 +1,6 @@
 package rclgo
 
-// #include "rmw/rmw.h"
+// #include "rmw/rmw.h" //nolint:all
 import "C"
 
 import (

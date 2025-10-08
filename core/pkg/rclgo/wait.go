@@ -1,8 +1,8 @@
 package rclgo
 
 /*
-#include <rcl/wait.h>
-#include <rcl_action/wait.h>
+#include <rcl/wait.h> // nolint
+#include <rcl_action/wait.h> // nolint
 */
 import "C"
 
