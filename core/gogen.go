@@ -443,7 +443,10 @@ func (g *Generator) generateAction(srcPath string) (*ROS2Action, error) {
 	err = g.generateIfaceGoFile(
 		action.Metadata,
 		ros2ActionToGolangTypeTemplate,
-		templateData{"Action": action},
+		templateData{
+			"Action":    action,
+			"ROSDistro": filepath.Base(os.Getenv(distro.AmentPrefixPath)),
+		},
 	)
 	if err != nil {
 		return nil, err
@@ -517,7 +520,10 @@ func (g *Generator) generateServiceGoFiles(parser *parser, srv *ROS2Service) err
 	err := g.generateIfaceGoFile(
 		srv.Metadata,
 		ros2ServiceToGolangTypeTemplate,
-		templateData{"Service": srv},
+		templateData{
+			"Service":   srv,
+			"ROSDistro": filepath.Base(os.Getenv(distro.AmentPrefixPath)),
+		},
 	)
 	if err != nil {
 		return err

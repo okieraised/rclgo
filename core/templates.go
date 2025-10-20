@@ -507,7 +507,7 @@ func (s _{{.Action.Name}}TypeSupport) GetResult() {{ $.ROSDistro }}.ServiceTypeS
 	return {{.Action.GetResult.Name}}TypeSupport
 }
 
-func (s _{{.Action.Name}}TypeSupport) NewGetResultResponse(status int8, result types.Message) {{ $.ROSDistro }}.Message {
+func (s _{{.Action.Name}}TypeSupport) NewGetResultResponse(status int8, result {{ $.ROSDistro }}.Message) {{ $.ROSDistro }}.Message {
 	msg := New{{.Action.Name}}_GetResult_Response()
 	msg.Status = status
 	if result == nil {
