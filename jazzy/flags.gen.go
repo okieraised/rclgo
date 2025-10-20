@@ -14,6 +14,9 @@ package jazzy
 #cgo CFLAGS: "-I/opt/ros/jazzy/include/unique_identifier_msgs"
 #cgo CFLAGS: "-I/opt/ros/jazzy/include/builtin_interfaces"
 #cgo CFLAGS: "-I/opt/ros/jazzy/include/rcl_yaml_param_parser"
+#cgo CFLAGS: "-I/opt/ros/jazzy/include/rosidl_dynamic_typesupport"
+#cgo CFLAGS: "-I/opt/ros/jazzy/include/service_msgs"
+#cgo CFLAGS: "-I/opt/ros/jazzy/include/type_description_interfaces"
 
 #cgo LDFLAGS: -lrcl -lrmw -lrosidl_runtime_c -lrosidl_typesupport_c -lrcutils -lrcl_action -lrmw_implementation
 */

@@ -105,7 +105,7 @@ func (g *Generator) GenerateRclgoFlags() error {
 		filepath.Join(g.config.DestPath, "flags.gen.go"),
 		rclgoFlags,
 		templateData{
-			"ROSIncludes": rclgoROSIncludes,
+			"ROSIncludes": retrieveRCLGOROSIncludes(),
 			"ROSDistro":   filepath.Base(os.Getenv(distro.AmentPrefixPath)),
 		},
 	)
@@ -137,17 +137,25 @@ func (g *Generator) GenerateROS2AllMessagesImporter() error {
 	)
 }
 
-var rclgoROSIncludes = []string{
-	"rcl",
-	"rmw",
-	"rosidl_runtime_c",
-	"rosidl_typesupport_interface",
-	"rcutils",
-	"rcl_action",
-	"action_msgs",
-	"unique_identifier_msgs",
-	"builtin_interfaces",
-	"rcl_yaml_param_parser",
+func retrieveRCLGOROSIncludes() []string {
+	rclgoROSIncludes := []string{
+		"rcl",
+		"rmw",
+		"rosidl_runtime_c",
+		"rosidl_typesupport_interface",
+		"rcutils",
+		"rcl_action",
+		"action_msgs",
+		"unique_identifier_msgs",
+		"builtin_interfaces",
+		"rcl_yaml_param_parser",
+	}
+
+	if filepath.Base(os.Getenv(distro.AmentPrefixPath)) == distro.ROSJazzy {
+		rclgoROSIncludes = append(rclgoROSIncludes, "rosidl_dynamic_typesupport", "service_msgs", "type_description_interfaces")
+	}
+
+	return rclgoROSIncludes
 }
 
 func includeDirFlag(rootPath, rosPkg string) string {
@@ -176,7 +184,7 @@ func (g *Generator) GenerateCGOFlags() error {
 	includes := utilities.StringSet{}
 	for _, rootPath := range g.config.RootPaths {
 		libDirs.Add(libDirFlag(rootPath))
-		for _, dep := range rclgoROSIncludes {
+		for _, dep := range retrieveRCLGOROSIncludes() {
 			includes.Add(includeDirFlag(rootPath, dep))
 		}
 		for pkgAndType, imports := range g.cImportsByPkgAndType {
@@ -540,15 +548,29 @@ func (g *Generator) generateCommonPackageGoFile(pkgAndType string, cImports util
 	if err != nil {
 		return err
 	}
-	return g.generateGoFile(
-		filepath.Join(g.config.DestPath, cPkg, pkgType, "common.gen.go"),
-		ros2PackageCommonTemplate,
-		templateData{
-			"GoPackage": pkgAndType,
-			"CPackage":  cPkg,
-			"CImports":  cImports,
-		},
-	)
+
+	if filepath.Base(os.Getenv(distro.AmentPrefixPath)) == distro.ROSHumble {
+		return g.generateGoFile(
+			filepath.Join(g.config.DestPath, cPkg, pkgType, "common.gen.go"),
+			ros2HumblePackageCommonTemplate,
+			templateData{
+				"GoPackage": pkgAndType,
+				"CPackage":  cPkg,
+				"CImports":  cImports,
+			},
+		)
+	} else {
+		return g.generateGoFile(
+			filepath.Join(g.config.DestPath, cPkg, pkgType, "common.gen.go"),
+			ros2JazzyPackageCommonTemplate,
+			templateData{
+				"GoPackage": pkgAndType,
+				"CPackage":  cPkg,
+				"CImports":  cImports,
+			},
+		)
+	}
+
 }
 
 func parsePkgAndType(pkgAndType string) (pkg string, typ string, err error) {
