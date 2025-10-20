@@ -598,7 +598,7 @@ func (c *Context) NewTimer(timeout time.Duration, timerCallback func(*Timer), au
 		C.int64_t(timeout),
 		nil,
 		*c.rclAllocatorT,
-		C.CBool(autostart),
+		C.bool(autostart),
 	)
 	if rc != C.RCL_RET_OK {
 		return nil, errorsCast(rc)
