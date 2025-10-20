@@ -572,14 +572,14 @@ type Timer struct {
 	context   *Context
 }
 
-func NewTimer(timeout time.Duration, timerCallback func(*Timer)) (*Timer, error) {
+func NewTimer(timeout time.Duration, timerCallback func(*Timer), autostart bool) (*Timer, error) {
 	if defaultContext == nil {
 		return nil, errInitNotCalled
 	}
-	return defaultContext.NewTimer(timeout, timerCallback)
+	return defaultContext.NewTimer(timeout, timerCallback, autostart)
 }
 
-func (c *Context) NewTimer(timeout time.Duration, timerCallback func(*Timer)) (timer *Timer, err error) {
+func (c *Context) NewTimer(timeout time.Duration, timerCallback func(*Timer), autostart bool) (timer *Timer, err error) {
 	if timeout == 0 {
 		timeout = 1000 * time.Millisecond
 	}
@@ -591,13 +591,14 @@ func (c *Context) NewTimer(timeout time.Duration, timerCallback func(*Timer)) (t
 	*timer.rclTimerT = C.rcl_get_zero_initialized_timer()
 	defer onErr(&err, timer.Close)
 
-	rc := C.rcl_timer_init(
+	rc := C.rcl_timer_init2(
 		timer.rclTimerT,
 		c.Clock().rclClockT,
 		c.rclContextT,
 		C.int64_t(timeout),
 		nil,
 		*c.rclAllocatorT,
+		autostart,
 	)
 	if rc != C.RCL_RET_OK {
 		return nil, errorsCast(rc)
